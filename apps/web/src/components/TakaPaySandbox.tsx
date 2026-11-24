@@ -15,17 +15,24 @@ export const TakaPaySandbox: React.FC<TakaPaySandboxProps> = ({
   const [recipient, setRecipient] = useState('01700-123456');
   const [amount, setAmount] = useState('500');
   const [pin, setPin] = useState('');
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [transferDone, setTransferDone] = useState(false);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin.length === 4) {
-      setTransferDone(true);
-      setTimeout(() => {
-        onFirstTransferComplete();
-      }, 1500);
+    if (!/^\d{4}$/.test(pin)) {
+      setErrorMsg(
+        lang === 'bn'
+          ? 'অনুগ্রহ করে ৪ সংখ্যার সঠিক পিন দিন (যেমন: 1234)।'
+          : 'Please enter a valid 4-digit numeric PIN (e.g. 1234).'
+      );
+      return;
     }
+    setErrorMsg(null);
+    setTransferDone(true);
+    setTimeout(() => {
+      onFirstTransferComplete();
+    }, 1500);
   };
 
   return (
@@ -110,14 +117,15 @@ export const TakaPaySandbox: React.FC<TakaPaySandboxProps> = ({
               />
             </div>
 
+            {errorMsg && (
+              <div role="alert" className="p-2 bg-vermilion/15 border-l-4 border-vermilion text-vermilion text-xs font-mono">
+                {errorMsg}
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={pin.length !== 4}
-              className={`w-full py-2.5 font-mono font-bold text-xs uppercase tracking-wider border-2 border-ink shadow-ink-blot transition-all ${
-                pin.length === 4
-                  ? 'bg-mustard text-ink hover:bg-mustard/90'
-                  : 'bg-paper text-faded-ink opacity-60'
-              }`}
+              className="w-full min-h-[48px] py-2.5 font-mono font-bold text-xs uppercase tracking-wider border-2 border-ink shadow-ink-blot transition-all bg-mustard text-ink hover:bg-mustard/90"
             >
               {lang === 'bn' ? 'টাকা পাঠান (Send Money)' : 'Send Money'}
             </button>

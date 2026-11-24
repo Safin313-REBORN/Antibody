@@ -8,6 +8,11 @@
 }
 
 /* Paper noise and Halftone pattern overlay */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   background-color: #F3EBDD;
   background-image: 

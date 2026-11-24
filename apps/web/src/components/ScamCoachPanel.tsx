@@ -60,7 +60,7 @@ export const ScamCoachPanel: React.FC<ScamCoachPanelProps> = ({ lang }) => {
           <span>{lang === 'bn' ? 'স্ক্যাম কোচ (Ask Coach)' : 'Scam Coach'}</span>
         </button>
       ) : (
-        <div className="w-[340px] sm:w-[380px] bg-paper border-2 border-ink shadow-ink-lg p-4 space-y-3">
+        <div className="w-[calc(100vw-2rem)] sm:w-[380px] max-w-full bg-paper border-2 border-ink shadow-ink-lg p-4 space-y-3">
           <div className="flex justify-between items-center border-b-2 border-ink pb-2">
             <span className="font-mono text-xs font-bold uppercase text-ink">
               {lang === 'bn' ? 'ফিল্ড কোচ // SCAM COACH' : 'FIELD SCAM COACH'}

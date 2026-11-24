@@ -16,12 +16,31 @@ export const AntibodyBuilder: React.FC<AntibodyBuilderProps> = ({
 }) => {
   const [pairedRules, setPairedRules] = useState<Record<string, string>>({});
   const [selectedTactic, setSelectedTactic] = useState<ScamTactic | null>(tacticsToSolve[0] || null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handlePair = (tactic: ScamTactic, ruleId: string) => {
+    const expected = TACTIC_DEFINITIONS[tactic].antibodyRule.id;
+    if (ruleId !== expected) {
+      setFeedback({
+        type: 'error',
+        text:
+          lang === 'bn'
+            ? 'এই নিয়মটি নির্বাচিত জীবাণুর সাথে মেলে না। আবার চেষ্টা করুন!'
+            : 'That rule does not match the selected pathogen. Try another defense!'
+      });
+      return;
+    }
     setPairedRules((prev) => ({
       ...prev,
       [tactic]: ruleId
     }));
+    setFeedback({
+      type: 'success',
+      text:
+        lang === 'bn'
+          ? 'সঠিক অ্যান্টিবডি যুক্ত হয়েছে!'
+          : 'Antibody locked! Defense rule synthesized.'
+    });
   };
 
   const isComplete = tacticsToSolve.every((t) => pairedRules[t] === TACTIC_DEFINITIONS[t].antibodyRule.id);
@@ -47,6 +66,19 @@ export const AntibodyBuilder: React.FC<AntibodyBuilderProps> = ({
           ? 'প্রতিটি স্ক্যাম কৌশলের বিপরীতে সঠিক প্রতিরক্ষা নিয়মটি (অ্যান্টিবডি) যুক্ত করুন। সঠিক নিয়মে যুক্ত হলে এলিয়েনের দেহে রোগ প্রতিরোধ ক্ষমতা জন্ম নেবে।'
           : 'Match each scam pathogen with its precise cognitive antibody rule. Correct pairs fortify the alien’s mental defenses.'}
       </p>
+
+      {feedback && (
+        <div
+          role={feedback.type === 'error' ? 'alert' : 'status'}
+          className={`p-3 mb-4 border-l-4 font-mono text-xs font-bold ${
+            feedback.type === 'error'
+              ? 'bg-vermilion/15 border-vermilion text-vermilion'
+              : 'bg-teal/15 border-teal text-teal'
+          }`}
+        >
+          {feedback.text}
+        </div>
+      )}
 
       {/* Target Specimen Slot */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

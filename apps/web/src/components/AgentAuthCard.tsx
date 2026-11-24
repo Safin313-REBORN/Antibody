@@ -37,17 +37,19 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
   const [ageConsent, setAgeConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleGuestPlay = async () => {
     setLoading(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
     try {
       const res = await fetch('/api/v1/auth/guest', { method: 'POST' });
       if (!res.ok) throw new Error('Could not establish guest session');
       const data = await res.json();
+      setSuccessMsg('Guest pass issued! Opening case file...');
       onAuthenticated(data.agent, data.token);
     } catch {
-      // Fallback offline guest
       const fallbackAgent: AgentProfile = {
         id: 'local_guest_' + Math.random().toString(36).substring(2, 7),
         callsign: 'Local Scout',
@@ -56,6 +58,7 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
         createdAt: new Date().toISOString(),
         lastSeenAt: new Date().toISOString()
       };
+      setSuccessMsg('Offline guest pass issued! Opening case file...');
       onAuthenticated(fallbackAgent, 'local-offline-token');
     } finally {
       setLoading(false);
@@ -165,8 +168,14 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-vermilion/15 border-l-4 border-vermilion text-vermilion text-xs font-mono mb-4">
+        <div role="alert" className="p-3 bg-vermilion/15 border-l-4 border-vermilion text-vermilion text-xs font-mono mb-4">
           {errorMsg}
+        </div>
+      )}
+
+      {successMsg && (
+        <div role="status" className="p-3 bg-teal/15 border-l-4 border-teal text-teal text-xs font-mono mb-4 font-bold">
+          {successMsg}
         </div>
       )}
 

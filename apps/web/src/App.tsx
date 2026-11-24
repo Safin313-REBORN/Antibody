@@ -67,12 +67,6 @@ const STAGE_META: Record<
     description: 'Dissect psychological scam pathogens under scientific glass.',
     crumb: 'Tactic X-Ray'
   },
-  antibody_lab: {
-    slug: '/antibody-lab',
-    title: 'Antibody Synthesis Lab — Antibody (অ্যান্টিবডি)',
-    description: 'Pair cognitive defense rules against social engineering tactics.',
-    crumb: 'Antibody Lab'
-  },
   antibody_builder: {
     slug: '/antibody-lab',
     title: 'Antibody Synthesis Lab — Antibody (অ্যান্টিবডি)',
@@ -118,6 +112,8 @@ export default function App() {
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [statusBanner, setStatusBanner] = useState<string | null>(null);
 
   // Resolve initial route if already booted or if visiting a 404 path directly
   useEffect(() => {
@@ -213,6 +209,12 @@ export default function App() {
     setToken(null);
     setDashboardMetrics(null);
     setWalletBalance(5000);
+    setMobileMenuOpen(false);
+    setStatusBanner(
+      lang === 'bn'
+        ? 'আপনার সমস্ত তথ্য স্থায়ীভাবে মুছে ফেলা হয়েছে।'
+        : 'All your agent records have been permanently deleted.'
+    );
     transitionTo('auth');
   };
 
@@ -286,7 +288,8 @@ export default function App() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-2">
             <button
               type="button"
               onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')}
@@ -308,7 +311,7 @@ export default function App() {
 
             {agent && (
               <div className="flex items-center gap-1.5">
-                <span className="hidden md:inline bg-paper px-2 py-1 border border-ink text-faded-ink">
+                <span className="bg-paper px-2 py-1 border border-ink text-faded-ink">
                   {agent.callsign}
                 </span>
                 <button
@@ -322,11 +325,75 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav"
+            aria-label="Toggle mobile menu"
+            className="md:hidden min-h-[44px] min-w-[44px] px-2.5 py-1 border-2 border-ink bg-paper font-bold text-xs flex items-center gap-1.5"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+            <span>{mobileMenuOpen ? 'CLOSE' : 'MENU'}</span>
+          </button>
+
+          {/* Mobile Drawer */}
+          {mobileMenuOpen && (
+            <nav
+              id="mobile-nav"
+              aria-label="Mobile Navigation"
+              className="w-full md:hidden border-t-2 border-ink pt-3 mt-2 flex flex-col gap-2"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setLang(lang === 'bn' ? 'en' : 'bn');
+                  setMobileMenuOpen(false);
+                }}
+                className="min-h-[48px] px-3 py-2 border-2 border-ink bg-paper text-left font-bold"
+              >
+                {lang === 'bn' ? 'Switch to ENGLISH' : 'বাংলায় দেখুন'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleDemoMode();
+                }}
+                className="min-h-[48px] px-3 py-2 border-2 border-ink bg-mustard text-ink text-left font-bold"
+              >
+                DEMO STORY (Quick Tour)
+              </button>
+              {agent && (
+                <button
+                  type="button"
+                  onClick={handleDeleteData}
+                  className="min-h-[48px] px-3 py-2 border-2 border-vermilion text-vermilion text-left font-bold"
+                >
+                  {lang === 'bn' ? `তথ্য মুছুন (${agent.callsign})` : `Delete Data (${agent.callsign})`}
+                </button>
+              )}
+            </nav>
+          )}
         </header>
       )}
 
       {stage !== 'boot' && (
-        <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl">
+        <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl w-full">
+          {statusBanner && (
+            <div role="status" className="mb-4 p-3 bg-teal/15 border-l-4 border-teal text-teal font-mono text-xs font-bold flex justify-between items-center">
+              <span>{statusBanner}</span>
+              <button type="button" onClick={() => setStatusBanner(null)} className="underline ml-2">
+                [OK]
+              </button>
+            </div>
+          )}
           {/* Breadcrumbs + Internal Links */}
           {currentMeta && (
             <nav aria-label="Breadcrumb" className="font-mono text-xs text-faded-ink mb-2 flex items-center gap-2">
@@ -473,7 +540,16 @@ export default function App() {
       {stage !== 'boot' && (
         <footer className="border-t border-ink/20 py-4 px-4 text-center font-mono text-[11px] text-faded-ink space-y-2">
           <div>
-            অ্যান্টিবডি (ANTIBODY) // কোনো বাস্তব অর্থ, ব্যক্তি বা সংস্থা জড়িত নয় // 100% Free Educational Simulation
+            &copy; {new Date().getFullYear()} Antibody Cognitive Defense Lab (অ্যান্টিবডি) // 100% Free Educational Simulation
+          </div>
+          <div className="flex flex-wrap justify-center items-center gap-3">
+            <a href="mailto:contact@antibody-lab.org" className="underline hover:text-ink">
+              contact@antibody-lab.org
+            </a>
+            <span aria-hidden="true">|</span>
+            <a href="tel:+8801600000000" className="underline hover:text-ink">
+              +880 1600-000000
+            </a>
           </div>
           <nav aria-label="Legal and compliance links" className="flex flex-wrap justify-center items-center gap-3">
             <button type="button" onClick={() => setActiveLegalDoc('privacy')} className="underline hover:text-ink">
