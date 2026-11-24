@@ -76,3 +76,10 @@ export function initSusceptibility(agentId: string) {
     insert.run(agentId, tactic, now);
   }
 }
+
+// Indexes to prevent full-table scans and N+1 bottlenecks
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_sessions_agent_id ON sessions(agent_id);
+  CREATE INDEX IF NOT EXISTS idx_attempts_session_created ON attempts(session_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_audit_events_created ON audit_events(created_at DESC);
+`);

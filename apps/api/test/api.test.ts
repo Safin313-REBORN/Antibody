@@ -137,4 +137,21 @@ describe('Antibody API Integration Tests', () => {
       .send({ message: 'Test client telemetry', source: 'vitest' });
     expect(errRes.status).toBe(200);
   });
+
+  it('enforces 401 on /me/dashboard without token, sanitizes XSS, and caches /content/antibodies', async () => {
+    const unauth = await request(app.server).get('/api/v1/me/dashboard');
+    expect(unauth.status).toBe(401);
+
+    const xssCallsign = `<b>Ali_${Date.now().toString().slice(-5)}</b>`;
+    const reg = await request(app.server)
+      .post('/api/v1/auth/register')
+      .send({ callsign: xssCallsign, passphrase: 'river-lamp-seven', avatar: 'curious' });
+    expect(reg.status).toBe(200);
+    expect(reg.body.agent.callsign).not.toContain('<');
+    expect(reg.body.agent.callsign).not.toContain('>');
+
+    const cached = await request(app.server).get('/api/v1/content/antibodies');
+    expect(cached.status).toBe(200);
+    expect(cached.headers['cache-control']).toContain('max-age=3600');
+  });
 });

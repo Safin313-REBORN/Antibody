@@ -11,6 +11,7 @@ import argon2 from 'argon2';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { db, initSusceptibility } from './db.js';
+import { apiCache } from './cache.js';
 import { ScammerStateMachine } from './scammerBot.js';
 import { ScamCoach } from './coachBot.js';
 import { LearnerModel } from './learnerModel.js';
@@ -23,10 +24,38 @@ import {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'antibody-dev-secret-change-in-prod-12345';
 const PORT = Number(process.env.PORT) || 4000;
+const ALLOWED_ORIGINS = (
+  process.env.CORS_ORIGINS ||
+  'http://localhost:3000,http://127.0.0.1:3000,http://localhost:4000,https://antibody-lab.org'
+)
+  .split(',')
+  .map((o) => o.trim());
+
+function sanitizeText(input: string): string {
+  return input.replace(/[<>]/g, '').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+}
+
+function verifyBearerToken(authHeader?: string): { agentId: string; sessionId?: string } | null {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    return jwt.verify(authHeader.slice(7), JWT_SECRET) as { agentId: string; sessionId?: string };
+  } catch {
+    return null;
+  }
+}
 
 export function buildServer() {
   const app = Fastify({
-    logger: process.env.NODE_ENV !== 'test'
+    logger: process.env.NODE_ENV !== 'test',
+    bodyLimit: 65536
+  });
+
+  app.setErrorHandler((error, req, reply) => {
+    req.log.error(error);
+    const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500;
+    reply.status(statusCode).send({
+      error: statusCode >= 500 ? 'Internal server error' : error.message
+    });
   });
 
   const coach = new ScamCoach();
@@ -44,7 +73,13 @@ export function buildServer() {
   });
 
   app.register(cors, {
-    origin: true,
+    origin: (origin, cb) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Origin not allowed by CORS'), false);
+      }
+    },
     credentials: true
   });
 
@@ -127,7 +162,11 @@ export function buildServer() {
       return reply.status(400).send({ error: 'Invalid payload', details: parsed.error });
     }
 
-    const { callsign, passphrase, avatar } = parsed.data;
+    const callsign = sanitizeText(parsed.data.callsign);
+    const { passphrase, avatar } = parsed.data;
+    if (callsign.length < 3) {
+      return reply.status(400).send({ error: 'Callsign must be at least 3 valid characters.' });
+    }
     const existing = db.prepare('SELECT id FROM agents WHERE callsign = ?').get(callsign);
     if (existing) {
       return reply.status(409).send({ error: 'That callsign is already registered. Pick another.' });
@@ -438,16 +477,13 @@ export function buildServer() {
     };
   });
 
-  // Dashboard / Progress metrics
-  const getDashboardHandler = async (req: any) => {
-    let agentId = 'guest';
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      try {
-        const decoded = jwt.verify(authHeader.replace('Bearer ', ''), JWT_SECRET) as any;
-        agentId = decoded.agentId;
-      } catch {}
+  // Dashboard / Progress metrics (strictly authenticated, row-level scoped by JWT agentId)
+  const getDashboardHandler = async (req: any, reply: any) => {
+    const decoded = verifyBearerToken(req.headers.authorization);
+    if (!decoded) {
+      return reply.status(401).send({ error: 'Authentication required' });
     }
+    const agentId = decoded.agentId;
 
     const agent = (db.prepare('SELECT * FROM agents WHERE id = ?').get(agentId) as any) || {
       id: agentId,
@@ -552,11 +588,14 @@ export function buildServer() {
     return advice;
   });
 
-  // Content: Antibodies taxonomy
-  app.get('/api/v1/content/antibodies', async () => {
-    return {
-      tactics: TACTIC_DEFINITIONS
-    };
+  // Content: Antibodies taxonomy (cached)
+  app.get('/api/v1/content/antibodies', async (_req, reply) => {
+    reply.header('Cache-Control', 'public, max-age=3600');
+    const cached = apiCache.get<{ tactics: typeof TACTIC_DEFINITIONS }>('antibodies');
+    if (cached) return cached;
+    const payload = { tactics: TACTIC_DEFINITIONS };
+    apiCache.set('antibodies', payload, 60 * 60 * 1000);
+    return payload;
   });
 
   // Serve built web client in production
