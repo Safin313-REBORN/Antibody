@@ -8,6 +8,7 @@ import { AntibodyBuilder } from './components/AntibodyBuilder';
 import { MutationRound } from './components/MutationRound';
 import { DashboardReport } from './components/DashboardReport';
 import { ScamCoachPanel } from './components/ScamCoachPanel';
+import { NotebookLoadingScreen } from './components/NotebookLoadingScreen';
 import {
   AgentProfile,
   DashboardMetrics,
@@ -34,6 +35,22 @@ export default function App() {
   const [walletBalance, setWalletBalance] = useState(5000);
   const [activeScenario] = useState<Scenario>(SCENARIO_FIXTURES[0]);
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const transitionTo = (nextStage: GameStage) => {
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      setStage(nextStage);
+      return;
+    }
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setStage(nextStage);
+      setIsTransitioning(false);
+    }, 380);
+  };
 
   useEffect(() => {
     try {
@@ -186,100 +203,106 @@ export default function App() {
 
       {stage !== 'boot' && (
         <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl">
-          {stage === 'auth' && (
-            <AgentAuthCard
-              onAuthenticated={handleAuthenticated}
-              onContinueOffline={() => setStage('case_intro')}
-            />
-          )}
+          {isTransitioning ? (
+            <NotebookLoadingScreen lang={lang} />
+          ) : (
+            <div key={stage} className="page-turn-enter">
+              {stage === 'auth' && (
+                <AgentAuthCard
+                  onAuthenticated={handleAuthenticated}
+                  onContinueOffline={() => transitionTo('case_intro')}
+                />
+              )}
 
-          {stage === 'case_intro' && (
-            <div className="max-w-xl mx-auto my-8 bg-paper hand-border p-6 shadow-ink-lg space-y-4">
-              <div className="border-b-2 border-ink pb-2">
-                <span className="font-mono text-xs bg-mustard px-2 py-0.5 font-bold uppercase text-ink">
-                  CONFIDENTIAL DOSSIER // কেস ফাইল
-                </span>
-                <h2 className="font-serif font-bold text-2xl text-ink mt-2 riso-misregister" data-text="Subject: 1 Alien. Money Exp: None.">
-                  Subject: 1 Alien. Money Exp: None.
-                </h2>
-              </div>
+              {stage === 'case_intro' && (
+                <div className="max-w-xl mx-auto my-8 bg-paper hand-border p-6 shadow-ink-lg space-y-4">
+                  <div className="border-b-2 border-ink pb-2">
+                    <span className="font-mono text-xs bg-mustard px-2 py-0.5 font-bold uppercase text-ink">
+                      CONFIDENTIAL DOSSIER // কেস ফাইল
+                    </span>
+                    <h2 className="font-serif font-bold text-2xl text-ink mt-2 riso-misregister" data-text="Subject: 1 Alien. Money Exp: None.">
+                      Subject: 1 Alien. Money Exp: None.
+                    </h2>
+                  </div>
 
-              <p className="font-sans text-base text-ink leading-relaxed">
-                {lang === 'bn'
-                  ? 'মহাকাশ থেকে আসা এই কৌতূহলী প্রাণীটি ঢাকার রাস্তায় পা রেখেছে। তার হাতে তুলে দেওয়া হয়েছে একটি সিমুলেটেড ওয়ালেট অ্যাপ: "টাকা-পে" এবং ৫,০০০ কাল্পনিক টাকা। কিন্তু ঢাকার ফোনে ঘুরে বেড়ায় নিত্যনতুন বাটপাড়ি ও প্রতারক দল।'
-                  : 'A naive extraterrestrial lands in Dhaka. Armed with a simulated wallet app "Taka-Pay" and 5,000 pretend taka, the alien knows nothing of urgency traps, fake police calls, or social engineering.'}
-              </p>
+                  <p className="font-sans text-base text-ink leading-relaxed">
+                    {lang === 'bn'
+                      ? 'মহাকাশ থেকে আসা এই কৌতূহলী প্রাণীটি ঢাকার রাস্তায় পা রেখেছে। তার হাতে তুলে দেওয়া হয়েছে একটি সিমুলেটেড ওয়ালেট অ্যাপ: "টাকা-পে" এবং ৫,০০০ কাল্পনিক টাকা। কিন্তু ঢাকার ফোনে ঘুরে বেড়ায় নিত্যনতুন বাটপাড়ি ও প্রতারক দল।'
+                      : 'A naive extraterrestrial lands in Dhaka. Armed with a simulated wallet app "Taka-Pay" and 5,000 pretend taka, the alien knows nothing of urgency traps, fake police calls, or social engineering.'}
+                  </p>
 
-              <div className="p-3 bg-[#FAF5EB] border-l-4 border-teal text-xs font-mono text-faded-ink">
-                {lang === 'bn'
-                  ? 'আপনার লক্ষ্য: এলিয়েনকে বিভিন্ন স্ক্যামের মুখে পড়তে দেওয়া, কৌশলগুলো এক্স-রে করা এবং তার মনে স্থায়ী "অ্যান্টিবডি" তৈরি করে দেওয়া।'
-                  : 'Your Goal: Observe the alien encounter scams, inspect the tactic X-rays, and forge cognitive antibodies.'}
-              </div>
+                  <div className="p-3 bg-[#FAF5EB] border-l-4 border-teal text-xs font-mono text-faded-ink">
+                    {lang === 'bn'
+                      ? 'আপনার লক্ষ্য: এলিয়েনকে বিভিন্ন স্ক্যামের মুখে পড়তে দেওয়া, কৌশলগুলো এক্স-রে করা এবং তার মনে স্থায়ী "অ্যান্টিবডি" তৈরি করে দেওয়া।'
+                      : 'Your Goal: Observe the alien encounter scams, inspect the tactic X-rays, and forge cognitive antibodies.'}
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => setStage('wallet_sandbox')}
-                className="w-full min-h-[48px] py-3 bg-teal text-paper font-mono font-bold text-sm border-2 border-ink shadow-ink-blot hover:bg-teal/90 uppercase tracking-wider"
-              >
-                {lang === 'bn' ? 'গবেষণা শুরু করুন (Begin Study) →' : 'Begin Study →'}
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => transitionTo('wallet_sandbox')}
+                    className="w-full min-h-[48px] py-3 bg-teal text-paper font-mono font-bold text-sm border-2 border-ink shadow-ink-blot hover:bg-teal/90 uppercase tracking-wider"
+                  >
+                    {lang === 'bn' ? 'গবেষণা শুরু করুন (Begin Study) →' : 'Begin Study →'}
+                  </button>
+                </div>
+              )}
+
+              {stage === 'wallet_sandbox' && (
+                <TakaPaySandbox
+                  balance={walletBalance}
+                  onFirstTransferComplete={() => transitionTo('scam_call')}
+                  lang={lang}
+                />
+              )}
+
+              {stage === 'scam_call' && (
+                <ScamCallExperience
+                  scenario={activeScenario}
+                  onBalanceDrained={() => {
+                    setWalletBalance(0);
+                    transitionTo('tactic_xray');
+                  }}
+                  lang={lang}
+                />
+              )}
+
+              {stage === 'tactic_xray' && (
+                <TacticXRay
+                  scenario={activeScenario}
+                  onContinueToAntibodies={() => transitionTo('antibody_builder')}
+                  lang={lang}
+                />
+              )}
+
+              {stage === 'antibody_builder' && (
+                <AntibodyBuilder
+                  tacticsToSolve={activeScenario.tactics}
+                  onAntibodiesReady={() => transitionTo('mutation_round')}
+                  lang={lang}
+                />
+              )}
+
+              {stage === 'mutation_round' && (
+                <MutationRound
+                  scenarios={SCENARIO_FIXTURES}
+                  token={token}
+                  onRoundComplete={handleRoundComplete}
+                  lang={lang}
+                />
+              )}
+
+              {stage === 'dashboard' && dashboardMetrics && (
+                <DashboardReport
+                  metrics={dashboardMetrics}
+                  onPlayAgain={() => {
+                    setWalletBalance(5000);
+                    transitionTo('case_intro');
+                  }}
+                  onDeleteData={handleDeleteData}
+                  lang={lang}
+                />
+              )}
             </div>
-          )}
-
-          {stage === 'wallet_sandbox' && (
-            <TakaPaySandbox
-              balance={walletBalance}
-              onFirstTransferComplete={() => setStage('scam_call')}
-              lang={lang}
-            />
-          )}
-
-          {stage === 'scam_call' && (
-            <ScamCallExperience
-              scenario={activeScenario}
-              onBalanceDrained={() => {
-                setWalletBalance(0);
-                setStage('tactic_xray');
-              }}
-              lang={lang}
-            />
-          )}
-
-          {stage === 'tactic_xray' && (
-            <TacticXRay
-              scenario={activeScenario}
-              onContinueToAntibodies={() => setStage('antibody_builder')}
-              lang={lang}
-            />
-          )}
-
-          {stage === 'antibody_builder' && (
-            <AntibodyBuilder
-              tacticsToSolve={activeScenario.tactics}
-              onAntibodiesReady={() => setStage('mutation_round')}
-              lang={lang}
-            />
-          )}
-
-          {stage === 'mutation_round' && (
-            <MutationRound
-              scenarios={SCENARIO_FIXTURES}
-              token={token}
-              onRoundComplete={handleRoundComplete}
-              lang={lang}
-            />
-          )}
-
-          {stage === 'dashboard' && dashboardMetrics && (
-            <DashboardReport
-              metrics={dashboardMetrics}
-              onPlayAgain={() => {
-                setWalletBalance(5000);
-                setStage('case_intro');
-              }}
-              onDeleteData={handleDeleteData}
-              lang={lang}
-            />
           )}
         </main>
       )}
@@ -287,8 +310,15 @@ export default function App() {
       {stage !== 'boot' && stage !== 'auth' && <ScamCoachPanel lang={lang} />}
 
       {stage !== 'boot' && (
-        <footer className="border-t border-ink/20 py-3 px-4 text-center font-mono text-[11px] text-faded-ink">
-          অ্যান্টিবডি (ANTIBODY) // কোনো বাস্তব অর্থ, ব্যক্তি বা সংস্থা জড়িত নয় // কাল্পনিক শিক্ষা প্রটোকল
+        <footer className="border-t border-ink/20 py-3 px-4 text-center font-mono text-[11px] text-faded-ink flex flex-wrap justify-center items-center gap-3">
+          <span>অ্যান্টিবডি (ANTIBODY) // কোনো বাস্তব অর্থ, ব্যক্তি বা সংস্থা জড়িত নয় // কাল্পনিক শিক্ষা প্রটোকল</span>
+          <button
+            type="button"
+            onClick={() => setStage('boot')}
+            className="underline hover:text-ink font-bold"
+          >
+            {lang === 'bn' ? 'বুট অ্যানিমেশন দেখুন' : 'Replay Boot'}
+          </button>
         </footer>
       )}
     </div>

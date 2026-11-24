@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ease-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
 /* Paper noise and Halftone pattern overlay */
 body {
   background-color: #F3EBDD;
@@ -91,9 +96,65 @@ a:focus-visible {
   border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
 }
 
+/* GPU-composited keyframes (transform & opacity only) */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pageTurnEnter {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(-6deg) translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1200px) rotateY(0deg) translateX(0);
+  }
+}
+
+@keyframes coverSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes stampThud {
+  0% {
+    opacity: 0;
+    transform: scale(1.35) rotate(-8deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(0.96) rotate(-2.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-3.5deg);
+  }
+}
+
+@keyframes antennaeLook {
+  0% { transform: translateY(18px) rotate(0deg); opacity: 0; }
+  35% { transform: translateY(0) rotate(-6deg); opacity: 1; }
+  70% { transform: translateY(0) rotate(6deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes inkBlotExpand {
+  from {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.6);
+  }
 }
 
 @keyframes shake {
@@ -104,12 +165,42 @@ a:focus-visible {
   80% { transform: translateX(4px); }
 }
 
+@keyframes specimenSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .animate-fadeIn {
-  animation: fadeIn 350ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: fadeIn 380ms var(--ease-enter) forwards;
+}
+
+.page-turn-enter {
+  transform-origin: left center;
+  animation: pageTurnEnter 700ms var(--ease-enter) forwards;
+}
+
+.animate-cover-slide {
+  animation: coverSlideIn 500ms var(--ease-enter) forwards;
+}
+
+.animate-stamp-thud {
+  animation: stampThud 380ms var(--ease-enter) forwards;
+}
+
+.animate-antennae-look {
+  animation: antennaeLook 900ms var(--ease-enter) forwards;
+}
+
+.animate-ink-blot {
+  animation: inkBlotExpand 650ms var(--ease-enter) forwards;
 }
 
 .animate-shake {
-  animation: shake 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: shake 400ms var(--ease-enter);
+}
+
+.animate-specimen-spin {
+  animation: specimenSpin 950ms linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
