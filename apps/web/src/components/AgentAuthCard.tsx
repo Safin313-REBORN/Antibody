@@ -5,6 +5,7 @@ import { AgentProfile } from '@antibody/shared';
 interface AgentAuthCardProps {
   onAuthenticated: (agent: AgentProfile, token: string) => void;
   onContinueOffline: () => void;
+  onOpenLegal?: (doc: 'privacy' | 'terms') => void;
 }
 
 const RANDOM_CALLSIGNS = [
@@ -23,11 +24,17 @@ const RANDOM_WORD_BANKS = [
   ['bamboo', 'flute', 'solar']
 ];
 
-export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({ onAuthenticated, onContinueOffline }) => {
+export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
+  onAuthenticated,
+  onContinueOffline,
+  onOpenLegal
+}) => {
   const [tab, setTab] = useState<'guest' | 'register' | 'login'>('guest');
   const [callsign, setCallsign] = useState(RANDOM_CALLSIGNS[0]);
   const [passphrase, setPassphrase] = useState(RANDOM_WORD_BANKS[0].join('-'));
   const [selectedAvatar, setSelectedAvatar] = useState<AlienMood>('curious');
+  const [formConsent, setFormConsent] = useState(false);
+  const [ageConsent, setAgeConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -172,10 +179,43 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({ onAuthenticated, o
           <p className="text-sm font-sans text-ink">
             কোনো নাম বা পাসওয়ার্ড ছাড়াই সরাসরি ঢাকা মোবাইল স্ক্যাম গবেষণাগারে প্রবেশ করুন। আপনার ব্রাউজারে ফলাফল সংরক্ষিত থাকবে।
           </p>
+          <div className="text-left space-y-2 p-3 bg-[#FAF5EC] border border-ink/40 text-xs font-sans">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formConsent}
+                onChange={(e) => setFormConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-teal"
+              />
+              <span>
+                I consent to storing only my chosen callsign and game scores (no email/phone/real name) per the{' '}
+                <button type="button" onClick={() => onOpenLegal?.('privacy')} className="underline text-teal font-bold">
+                  Privacy Policy
+                </button>{' '}
+                and{' '}
+                <button type="button" onClick={() => onOpenLegal?.('terms')} className="underline text-teal font-bold">
+                  Terms of Service
+                </button>.
+              </span>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ageConsent}
+                onChange={(e) => setAgeConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-teal"
+              />
+              <span>
+                I confirm I am 13+ (or 16+ where required) or have parent/guardian consent to play.
+              </span>
+            </label>
+          </div>
+
           <button
+            type="button"
             onClick={handleGuestPlay}
-            disabled={loading}
-            className="w-full py-3 bg-teal text-paper font-mono font-bold text-base shadow-ink-blot hover:bg-teal/90 transition-all border-2 border-ink"
+            disabled={loading || !formConsent || !ageConsent}
+            className="w-full min-h-[48px] py-3 bg-teal text-paper font-mono font-bold text-base shadow-ink-blot hover:bg-teal/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all border-2 border-ink"
           >
             {loading ? 'অনুসন্ধান শুরু হচ্ছে...' : 'Play as Guest / অতিথি হিসেবে শুরু করুন'}
           </button>
@@ -256,10 +296,41 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({ onAuthenticated, o
             </div>
           </div>
 
+          <div className="text-left space-y-2 p-3 bg-[#FAF5EC] border border-ink/40 text-xs font-sans">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                required
+                checked={formConsent}
+                onChange={(e) => setFormConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-teal"
+              />
+              <span>
+                I agree to the{' '}
+                <button type="button" onClick={() => onOpenLegal?.('privacy')} className="underline text-teal font-bold">
+                  Privacy Policy
+                </button>{' '}
+                (callsign + Argon2id hash + scores only, ৳0 free forever).
+              </span>
+            </label>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                required
+                checked={ageConsent}
+                onChange={(e) => setAgeConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-teal"
+              />
+              <span>
+                I confirm I meet the minimum age requirement (13+/16+) or have parent/guardian consent.
+              </span>
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-ink text-paper font-mono font-bold text-sm shadow-ink-blot hover:bg-ink/90 transition-all border-2 border-ink mt-4"
+            disabled={loading || !formConsent || !ageConsent}
+            className="w-full min-h-[48px] py-3 bg-ink text-paper font-mono font-bold text-sm shadow-ink-blot hover:bg-ink/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all border-2 border-ink mt-4"
           >
             {loading ? 'আইডি খোদাই করা হচ্ছে...' : 'Create Agent Card / কার্ড নিশ্চিত করুন'}
           </button>

@@ -9,6 +9,8 @@ import { MutationRound } from './components/MutationRound';
 import { DashboardReport } from './components/DashboardReport';
 import { ScamCoachPanel } from './components/ScamCoachPanel';
 import { NotebookLoadingScreen } from './components/NotebookLoadingScreen';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { LegalModal, LegalDocType } from './components/LegalModal';
 import {
   AgentProfile,
   DashboardMetrics,
@@ -36,6 +38,7 @@ export default function App() {
   const [activeScenario] = useState<Scenario>(SCENARIO_FIXTURES[0]);
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType | null>(null);
 
   const transitionTo = (nextStage: GameStage) => {
     const reduced =
@@ -211,6 +214,7 @@ export default function App() {
                 <AgentAuthCard
                   onAuthenticated={handleAuthenticated}
                   onContinueOffline={() => transitionTo('case_intro')}
+                  onOpenLegal={(doc) => setActiveLegalDoc(doc)}
                 />
               )}
 
@@ -310,15 +314,44 @@ export default function App() {
       {stage !== 'boot' && stage !== 'auth' && <ScamCoachPanel lang={lang} />}
 
       {stage !== 'boot' && (
-        <footer className="border-t border-ink/20 py-3 px-4 text-center font-mono text-[11px] text-faded-ink flex flex-wrap justify-center items-center gap-3">
-          <span>অ্যান্টিবডি (ANTIBODY) // কোনো বাস্তব অর্থ, ব্যক্তি বা সংস্থা জড়িত নয় // কাল্পনিক শিক্ষা প্রটোকল</span>
-          <button
-            type="button"
-            onClick={() => setStage('boot')}
-            className="underline hover:text-ink font-bold"
-          >
-            {lang === 'bn' ? 'বুট অ্যানিমেশন দেখুন' : 'Replay Boot'}
-          </button>
+        <CookieConsentBanner
+          lang={lang}
+          onOpenCookiePolicy={() => setActiveLegalDoc('cookie')}
+        />
+      )}
+
+      <LegalModal
+        doc={activeLegalDoc}
+        onClose={() => setActiveLegalDoc(null)}
+        lang={lang}
+        onDeleteData={agent ? handleDeleteData : undefined}
+      />
+
+      {stage !== 'boot' && (
+        <footer className="border-t border-ink/20 py-4 px-4 text-center font-mono text-[11px] text-faded-ink space-y-2">
+          <div>
+            অ্যান্টিবডি (ANTIBODY) // কোনো বাস্তব অর্থ, ব্যক্তি বা সংস্থা জড়িত নয় // 100% Free Educational Simulation
+          </div>
+          <nav aria-label="Legal and compliance links" className="flex flex-wrap justify-center items-center gap-3">
+            <button type="button" onClick={() => setActiveLegalDoc('privacy')} className="underline hover:text-ink">
+              Privacy Policy
+            </button>
+            <button type="button" onClick={() => setActiveLegalDoc('terms')} className="underline hover:text-ink">
+              Terms of Service
+            </button>
+            <button type="button" onClick={() => setActiveLegalDoc('refund')} className="underline hover:text-ink">
+              Refund Policy
+            </button>
+            <button type="button" onClick={() => setActiveLegalDoc('cookie')} className="underline hover:text-ink">
+              Cookie Policy
+            </button>
+            <button type="button" onClick={() => setActiveLegalDoc('compliance')} className="underline hover:text-ink">
+              Business, Licenses &amp; SDK Audit
+            </button>
+            <button type="button" onClick={() => setStage('boot')} className="underline hover:text-ink font-bold">
+              {lang === 'bn' ? 'বুট অ্যানিমেশন দেখুন' : 'Replay Boot'}
+            </button>
+          </nav>
         </footer>
       )}
     </div>
