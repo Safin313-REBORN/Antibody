@@ -134,7 +134,7 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
     try {
       localStorage.setItem('antibody_theme', theme);
-    } catch {}
+    } catch { }
   }, [theme]);
 
   // UTM tracking (non-PII campaign attribution)
@@ -150,7 +150,7 @@ export default function App() {
           JSON.stringify({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign })
         );
       }
-    } catch {}
+    } catch { }
   }, []);
 
   // Scroll progress bar & Back-to-top visibility
@@ -188,7 +188,7 @@ export default function App() {
       if (hasBooted) {
         setStage(resolved);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   // Listen to browser back/forward navigation
@@ -213,7 +213,7 @@ export default function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ event: 'page_view', stage })
-    }).catch(() => {});
+    }).catch(() => { });
   }, [stage]);
 
   const transitionTo = (nextStage: GameStage) => {
@@ -238,7 +238,7 @@ export default function App() {
   const handleBootComplete = () => {
     try {
       sessionStorage.setItem('antibody_booted', 'true');
-    } catch {}
+    } catch { }
     const resolved =
       typeof window !== 'undefined' ? resolveStageFromPath(window.location.pathname) : 'auth';
     setStage(resolved);
@@ -264,7 +264,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => { });
     setAgent(null);
     setToken(null);
     setDashboardMetrics(null);
@@ -279,7 +279,7 @@ export default function App() {
       await fetch('/api/v1/me', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
-      }).catch(() => {});
+      }).catch(() => { });
     }
     setAgent(null);
     setToken(null);
@@ -332,7 +332,7 @@ export default function App() {
           transitionTo('dashboard');
           return;
         }
-      } catch {}
+      } catch { }
     }
 
     setDashboardMetrics(fallbackMetrics);
