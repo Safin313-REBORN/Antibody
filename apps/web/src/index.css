@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Paper noise and Halftone pattern overlay */
+body {
+  background-color: #F3EBDD;
+  background-image: 
+    radial-gradient(#14231F 0.75px, transparent 0.75px),
+    radial-gradient(#5B6B63 0.5px, #F3EBDD 0.5px);
+  background-size: 30px 30px, 15px 15px;
+  background-position: 0 0, 7.5px 7.5px;
+  color: #14231F;
+}
+
+/* Riso misregistration effect */
+.riso-misregister {
+  position: relative;
+}
+.riso-misregister::before {
+  content: attr(data-text);
+  position: absolute;
+  top: 1.5px;
+  left: -1.5px;
+  color: #E4422B;
+  opacity: 0.65;
+  z-index: -1;
+  pointer-events: none;
+}
+.riso-misregister::after {
+  content: attr(data-text);
+  position: absolute;
+  top: -1px;
+  left: 1.5px;
+  color: #0E7C7B;
+  opacity: 0.45;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Rubber Stamp Styling */
+.rubber-stamp {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  border: 3px dashed currentColor;
+  border-radius: 4px;
+  transform: rotate(-3.5deg);
+  box-shadow: 2px 2px 0px rgba(20, 35, 31, 0.4);
+}
+
+.rubber-stamp-danger {
+  color: #E4422B;
+  border-color: #E4422B;
+}
+
+.rubber-stamp-safe {
+  color: #0E7C7B;
+  border-color: #0E7C7B;
+}
+
+.rubber-stamp-warn {
+  color: #E9A800;
+  border-color: #E9A800;
+}
+
+/* Notebook Page Edge */
+.notebook-edge {
+  box-shadow: 
+    -4px 0px 0px 0px #e0d5c1,
+    -8px 0px 0px 0px #cfc2a9,
+    4px 6px 12px rgba(20, 35, 31, 0.15);
+}
+
+/* Hand-drawn wobbly border */
+.hand-border {
+  border: 2px solid #14231F;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}

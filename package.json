@@ -1,0 +1,15 @@
+{
+  "name": "antibody-root",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @antibody/api dev & pnpm --filter @antibody/web dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "start": "pnpm --filter @antibody/api start"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
