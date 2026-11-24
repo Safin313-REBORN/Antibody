@@ -215,3 +215,55 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Tactile hover states for interactive buttons */
+button:not(:disabled) {
+  transition: transform 150ms var(--ease-enter), background-color 150ms ease, box-shadow 150ms ease;
+}
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+/* Night Field Mode (Dark Mode Toggle) */
+[data-theme='night'] body {
+  background-color: #14231F;
+  background-image:
+    radial-gradient(#5B6B63 0.75px, transparent 0.75px),
+    radial-gradient(#243B35 0.5px, #14231F 0.5px);
+  color: #F3EBDD;
+}
+[data-theme='night'] .bg-paper {
+  background-color: #1B2E29 !important;
+  color: #F3EBDD !important;
+}
+[data-theme='night'] .bg-\[\#FAF5EC\],
+[data-theme='night'] .bg-\[\#FAF5EB\],
+[data-theme='night'] .bg-\[\#FAF6EE\] {
+  background-color: #213731 !important;
+  color: #F3EBDD !important;
+}
+[data-theme='night'] .text-ink {
+  color: #F3EBDD !important;
+}
+[data-theme='night'] .text-faded-ink {
+  color: #B7C7BF !important;
+}
+[data-theme='night'] .border-ink {
+  border-color: #8CA197 !important;
+}
+
+/* Print Stylesheet */
+@media print {
+  header, footer, nav, button, [role='dialog'], .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt !important;
+  }
+  .hand-border, .shadow-ink-lg, .shadow-ink-blot {
+    box-shadow: none !important;
+    border: 1px solid #000000 !important;
+  }
+}

@@ -12,6 +12,9 @@ import { NotebookLoadingScreen } from './components/NotebookLoadingScreen';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { LegalModal, LegalDocType } from './components/LegalModal';
 import { NotFoundPage } from './components/NotFoundPage';
+import { SiteSearchModal } from './components/SiteSearchModal';
+import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
+import { FaqAccordion } from './components/FaqAccordion';
 import {
   AgentProfile,
   DashboardMetrics,
@@ -114,6 +117,53 @@ export default function App() {
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'paper' | 'night'>(() => {
+    try {
+      return localStorage.getItem('antibody_theme') === 'night' ? 'night' : 'paper';
+    } catch {
+      return 'paper';
+    }
+  });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Dark mode attribute sync
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('antibody_theme', theme);
+    } catch {}
+  }, [theme]);
+
+  // UTM tracking (non-PII campaign attribution)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const utmSource = params.get('utm_source');
+      const utmMedium = params.get('utm_medium');
+      const utmCampaign = params.get('utm_campaign');
+      if (utmSource || utmMedium || utmCampaign) {
+        sessionStorage.setItem(
+          'antibody_utm',
+          JSON.stringify({ utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign })
+        );
+      }
+    } catch {}
+  }, []);
+
+  // Scroll progress bar & Back-to-top visibility
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(docHeight > 0 ? Math.min(1, scrollTop / docHeight) : 0);
+      setShowBackToTop(scrollTop > 240);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Resolve initial route if already booted or if visiting a 404 path directly
   useEffect(() => {
@@ -267,10 +317,31 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between selection:bg-mustard selection:text-ink">
+      {/* Skip to content link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-mustard focus:text-ink focus:font-mono focus:text-xs focus:font-bold focus:border-2 focus:border-ink"
+      >
+        Skip to content
+      </a>
+
+      {/* Scroll progress bar */}
+      {stage !== 'boot' && (
+        <div
+          aria-hidden="true"
+          className="fixed top-0 left-0 right-0 h-1 bg-ink/10 z-40 pointer-events-none no-print"
+        >
+          <div
+            className="h-full bg-mustard origin-left transition-transform duration-75"
+            style={{ transform: `scaleX(${scrollProgress})` }}
+          />
+        </div>
+      )}
+
       {stage === 'boot' && <BootAnimation onComplete={handleBootComplete} />}
 
       {stage !== 'boot' && (
-        <header className="border-b-2 border-ink bg-[#FAF5EB] px-4 py-3 flex flex-wrap justify-between items-center gap-2 text-xs font-mono">
+        <header className="sticky top-0 z-30 border-b-2 border-ink bg-[#FAF5EB] px-4 py-3 flex flex-wrap justify-between items-center gap-2 text-xs font-mono">
           <div className="flex items-center gap-3">
             <a
               href="/"
@@ -290,6 +361,23 @@ export default function App() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="min-h-[40px] px-3 py-1 border border-ink hover:bg-mustard font-bold transition-all text-xs"
+            >
+              {lang === 'bn' ? 'খুঁজুন (Search)' : 'Search'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTheme(theme === 'paper' ? 'night' : 'paper')}
+              aria-label="Toggle dark mode"
+              className="min-h-[40px] px-3 py-1 border border-ink hover:bg-mustard font-bold transition-all text-xs"
+            >
+              {theme === 'paper' ? 'Night Mode' : 'Paper Mode'}
+            </button>
+
             <button
               type="button"
               onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')}
@@ -316,7 +404,7 @@ export default function App() {
                 </span>
                 <button
                   type="button"
-                  onClick={handleDeleteData}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   title="Delete my data"
                   className="min-h-[40px] px-2.5 py-1 border border-vermilion text-vermilion hover:bg-vermilion/10 font-bold text-[11px]"
                 >
@@ -353,6 +441,26 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
+                  setSearchOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="min-h-[48px] px-3 py-2 border-2 border-ink bg-paper text-left font-bold"
+              >
+                {lang === 'bn' ? 'নমুনা খুঁজুন (Search)' : 'Search Specimens'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme(theme === 'paper' ? 'night' : 'paper');
+                  setMobileMenuOpen(false);
+                }}
+                className="min-h-[48px] px-3 py-2 border-2 border-ink bg-paper text-left font-bold"
+              >
+                {theme === 'paper' ? 'Switch to Night Mode' : 'Switch to Paper Mode'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   setLang(lang === 'bn' ? 'en' : 'bn');
                   setMobileMenuOpen(false);
                 }}
@@ -373,7 +481,10 @@ export default function App() {
               {agent && (
                 <button
                   type="button"
-                  onClick={handleDeleteData}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setConfirmDeleteOpen(true);
+                  }}
                   className="min-h-[48px] px-3 py-2 border-2 border-vermilion text-vermilion text-left font-bold"
                 >
                   {lang === 'bn' ? `তথ্য মুছুন (${agent.callsign})` : `Delete Data (${agent.callsign})`}
@@ -385,7 +496,7 @@ export default function App() {
       )}
 
       {stage !== 'boot' && (
-        <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl w-full">
+        <main id="main-content" className="flex-1 container mx-auto px-4 py-4 max-w-4xl w-full">
           {statusBanner && (
             <div role="status" className="mb-4 p-3 bg-teal/15 border-l-4 border-teal text-teal font-mono text-xs font-bold flex justify-between items-center">
               <span>{statusBanner}</span>
@@ -508,7 +619,7 @@ export default function App() {
                     setWalletBalance(5000);
                     transitionTo('case_intro');
                   }}
-                  onDeleteData={handleDeleteData}
+                  onDeleteData={() => setConfirmDeleteOpen(true)}
                   lang={lang}
                 />
               )}
@@ -518,10 +629,39 @@ export default function App() {
               )}
             </div>
           )}
+
+          {stage !== 'not_found' && <FaqAccordion lang={lang} />}
         </main>
       )}
 
       {stage !== 'boot' && stage !== 'auth' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
+
+      {/* Floating Contact & Back-to-Top Controls */}
+      {stage !== 'boot' && (
+        <div className="fixed bottom-4 left-4 z-30 flex items-center gap-2 no-print">
+          <a
+            href="mailto:contact@antibody-lab.org?subject=Antibody%20Inquiry"
+            className="min-h-[44px] px-3 py-2 bg-paper text-ink font-mono text-xs font-bold border-2 border-ink shadow-ink-blot hover:bg-mustard flex items-center gap-1.5"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            <span>{lang === 'bn' ? 'যোগাযোগ' : 'Contact'}</span>
+          </a>
+
+          {showBackToTop && (
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              aria-label="Back to top"
+              className="min-h-[44px] px-3 py-2 bg-ink text-paper font-mono text-xs font-bold border-2 border-mustard shadow-ink-blot"
+            >
+              ↑ TOP
+            </button>
+          )}
+        </div>
+      )}
 
       {stage !== 'boot' && (
         <CookieConsentBanner
@@ -530,17 +670,34 @@ export default function App() {
         />
       )}
 
+      <SiteSearchModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        lang={lang}
+        onNavigateStage={(target) => transitionTo(target)}
+      />
+
+      <ConfirmDeleteModal
+        open={confirmDeleteOpen}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => {
+          setConfirmDeleteOpen(false);
+          handleDeleteData();
+        }}
+        lang={lang}
+      />
+
       <LegalModal
         doc={activeLegalDoc}
         onClose={() => setActiveLegalDoc(null)}
         lang={lang}
-        onDeleteData={agent ? handleDeleteData : undefined}
+        onDeleteData={agent ? () => setConfirmDeleteOpen(true) : undefined}
       />
 
       {stage !== 'boot' && (
-        <footer className="border-t border-ink/20 py-4 px-4 text-center font-mono text-[11px] text-faded-ink space-y-2">
+        <footer className="border-t border-ink/20 py-4 px-4 pb-20 text-center font-mono text-[11px] text-faded-ink space-y-2">
           <div>
-            &copy; {new Date().getFullYear()} Antibody Cognitive Defense Lab (অ্যান্টিবডি) // 100% Free Educational Simulation
+            &copy; {new Date().getFullYear()} Antibody Cognitive Defense Lab (অ্যান্টিবডি) // Last updated: 2026-11-25
           </div>
           <div className="flex flex-wrap justify-center items-center gap-3">
             <a href="mailto:contact@antibody-lab.org" className="underline hover:text-ink">

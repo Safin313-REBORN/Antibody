@@ -35,6 +35,8 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
   const [selectedAvatar, setSelectedAvatar] = useState<AlienMood>('curious');
   const [formConsent, setFormConsent] = useState(false);
   const [ageConsent, setAgeConsent] = useState(false);
+  const [showPassphrase, setShowPassphrase] = useState(false);
+  const [copiedPhrase, setCopiedPhrase] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -275,10 +277,22 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
                 onClick={() => {
                   const set = RANDOM_WORD_BANKS[Math.floor(Math.random() * RANDOM_WORD_BANKS.length)];
                   setPassphrase(set.join('-'));
+                  setCopiedPhrase(false);
                 }}
                 className="px-3 py-2 border-2 border-ink font-mono text-xs bg-mustard/30 hover:bg-mustard"
               >
                 নতুন
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(passphrase).catch(() => {});
+                  setCopiedPhrase(true);
+                  setTimeout(() => setCopiedPhrase(false), 1800);
+                }}
+                className="px-3 py-2 border-2 border-ink font-mono text-xs bg-teal/20 hover:bg-teal/30 font-bold"
+              >
+                {copiedPhrase ? 'Copied!' : 'Copy'}
               </button>
             </div>
             <p className="text-[11px] text-faded-ink mt-1 font-mono">
@@ -367,14 +381,28 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
             <label className="block text-xs font-mono font-bold text-ink mb-1">
               3-WORD PASSPHRASE / ৩ শব্দের পাসফ্রেজ
             </label>
-            <input
-              type="password"
-              value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              required
-              placeholder="word-word-word"
-              className="w-full p-2 bg-[#FAF5EC] border-2 border-ink font-mono text-sm focus:outline-none focus:ring-2 focus:ring-mustard"
-            />
+            <div className="flex gap-2">
+              <input
+                type={showPassphrase ? 'text' : 'password'}
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+                required
+                placeholder="word-word-word"
+                className="flex-1 p-2 bg-[#FAF5EC] border-2 border-ink font-mono text-sm focus:outline-none focus:ring-2 focus:ring-mustard"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassphrase((v) => !v)}
+                aria-label={showPassphrase ? 'Hide passphrase' : 'Show passphrase'}
+                className="min-h-[44px] px-3 border-2 border-ink bg-paper font-mono text-xs font-bold flex items-center gap-1"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span>{showPassphrase ? 'HIDE' : 'SHOW'}</span>
+              </button>
+            </div>
           </div>
 
           <button
