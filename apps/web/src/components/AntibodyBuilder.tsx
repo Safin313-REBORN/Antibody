@@ -33,9 +33,9 @@ export const AntibodyBuilder: React.FC<AntibodyBuilderProps> = ({
           <span className="font-mono text-xs bg-teal text-paper px-2 py-0.5 font-bold uppercase tracking-wider">
             SYNTHESIS LAB // অ্যান্টিবডি প্রস্তুতকরণ
           </span>
-          <h3 className="font-serif font-bold text-2xl text-ink mt-1 riso-misregister" data-text="Forge Cognitive Antibodies">
+          <h1 className="font-serif font-bold text-2xl text-ink mt-1 riso-misregister" data-text="Forge Cognitive Antibodies">
             Forge Cognitive Antibodies
-          </h3>
+          </h1>
         </div>
         <div className="rubber-stamp rubber-stamp-safe text-xs">
           RULE PROTOCOL

@@ -54,9 +54,9 @@ export const ScamCallExperience: React.FC<ScamCallExperienceProps> = ({
           <span className="font-mono text-xs bg-vermilion text-paper px-2 py-0.5 font-bold uppercase tracking-wider">
             LIVE SIMULATION // লাইভ স্ক্যাম কল
           </span>
-          <h3 className="font-serif font-bold text-xl text-ink mt-1">
+          <h1 className="font-serif font-bold text-xl text-ink mt-1">
             {scenario.content.title[lang]}
-          </h3>
+          </h1>
         </div>
         <div className="font-mono text-sm font-bold text-vermilion">
           ৳ {balance.toLocaleString()}

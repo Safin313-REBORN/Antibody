@@ -1,0 +1,17 @@
+# Antibody (অ্যান্টিবডি)
+
+> An interactive bilingual (Bangla & English) browser game teaching first-time digital users to recognize and resist mobile-money and phone scams in Dhaka.
+
+## Key Pages
+- `/` — Field Agent Registration & Guest Entry
+- `/case-file` — Case Dossier Introduction
+- `/wallet-sandbox` — Taka-Pay Simulated Wallet Tutorial
+- `/scam-call` — Live Scammer Bot Simulation
+- `/tactic-xray` — Psychological Pathogen Autopsy
+- `/antibody-lab` — Cognitive Defense Rule Builder
+- `/mutation-exam` — Mixed Real & Scam Classification Exam
+- `/report` — Bayesian Susceptibility Map & Homeworld Postcard
+
+## Privacy & Ethics
+- 100% free educational simulation; all brands (Taka-Pay) and balances are fictional.
+- Collects zero emails, phone numbers, real names, or tracking cookies.

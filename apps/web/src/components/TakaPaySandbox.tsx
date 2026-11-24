@@ -31,6 +31,7 @@ export const TakaPaySandbox: React.FC<TakaPaySandboxProps> = ({
   return (
     <div className="max-w-md mx-auto my-6 bg-[#FAF6EE] border-4 border-ink p-4 rounded-xl shadow-ink-lg relative">
       {/* Phone Screen Mockup Bezel */}
+      <h1 className="sr-only">{lang === 'bn' ? 'টাকা-পে ওয়ালেট স্যান্ডবক্স' : 'Taka-Pay Wallet Sandbox'}</h1>
       <div className="bg-ink text-paper py-2 px-4 rounded-t-lg flex justify-between items-center text-xs font-mono">
         <span className="font-bold flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-teal animate-ping inline-block" />

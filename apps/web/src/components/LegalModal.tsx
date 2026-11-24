@@ -134,7 +134,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           {doc === 'compliance' && (
             <>
               <p>
-                <strong>Business / Operator Details:</strong> Antibody Cognitive Defense Lab (Educational Open-Source Initiative), Dhaka, Bangladesh. Contact: <code>hello@antibody.example</code>.
+                <strong>Business / Operator Details:</strong> Antibody Cognitive Defense Lab (Educational Open-Source Initiative), Dhaka, Bangladesh. Contact: <code>contact@antibody-lab.org</code>.
               </p>
               <p>
                 <strong>Third-Party SDK Audit:</strong> Zero third-party analytics, crash-tracking, or ad-tech SDKs are bundled. Backend uses Fastify, Zod, Argon2id, and SQLite. Frontend uses React 18 and Tailwind CSS.

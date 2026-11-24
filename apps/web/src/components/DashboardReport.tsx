@@ -56,9 +56,9 @@ export const DashboardReport: React.FC<DashboardReportProps> = ({
           <span className="font-mono text-xs bg-mustard text-ink px-2 py-0.5 font-bold uppercase tracking-wider">
             POSTCARDS TO HOMEWORLD // ঢাকা মাঠ পর্যায় প্রতিবেদন
           </span>
-          <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink mt-1 riso-misregister" data-text="Subject Cognitive Resistance Map">
+          <h1 className="font-serif font-bold text-2xl sm:text-3xl text-ink mt-1 riso-misregister" data-text="Subject Cognitive Resistance Map">
             Subject Cognitive Resistance Map
-          </h2>
+          </h1>
           <p className="font-mono text-xs text-faded-ink">
             AGENT: {metrics.agent.callsign} // ID: {metrics.agent.id}
           </p>

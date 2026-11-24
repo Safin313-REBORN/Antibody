@@ -118,9 +118,9 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
           <span className="font-mono text-xs bg-mustard px-2 py-0.5 font-bold uppercase tracking-wider text-ink">
             SPECIMEN ACCESS PASS // আইডি কার্ড
           </span>
-          <h2 className="text-2xl font-serif font-bold text-ink mt-1 riso-misregister" data-text="Field Agent Registration">
+          <h1 className="text-2xl font-serif font-bold text-ink mt-1 riso-misregister" data-text="Field Agent Registration">
             Field Agent Registration
-          </h2>
+          </h1>
           <p className="text-xs text-faded-ink">
             কোনো ব্যক্তিগত তথ্য (ইমেইল/ফোন নম্বর) সংগ্রহ করা হয় না। কেবল গেমের অগ্রগতি সংরক্ষিত থাকে।
           </p>

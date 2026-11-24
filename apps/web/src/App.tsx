@@ -11,6 +11,7 @@ import { ScamCoachPanel } from './components/ScamCoachPanel';
 import { NotebookLoadingScreen } from './components/NotebookLoadingScreen';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { LegalModal, LegalDocType } from './components/LegalModal';
+import { NotFoundPage } from './components/NotFoundPage';
 import {
   AgentProfile,
   DashboardMetrics,
@@ -27,7 +28,85 @@ export type GameStage =
   | 'tactic_xray'
   | 'antibody_builder'
   | 'mutation_round'
-  | 'dashboard';
+  | 'dashboard'
+  | 'not_found';
+
+const SITE_ORIGIN = 'https://antibody-lab.org';
+
+const STAGE_META: Record<
+  Exclude<GameStage, 'boot'>,
+  { slug: string; title: string; description: string; crumb: string }
+> = {
+  auth: {
+    slug: '/',
+    title: 'Field Agent Registration — Antibody (অ্যান্টিবডি)',
+    description: 'Create an anonymous Field Agent ID or play as a guest with zero personal data collection.',
+    crumb: 'Agent ID'
+  },
+  case_intro: {
+    slug: '/case-file',
+    title: 'Case File 01 — Antibody (অ্যান্টিবডি)',
+    description: 'Meet the naive alien arriving in Dhaka with 5,000 pretend taka in Taka-Pay.',
+    crumb: 'Case File'
+  },
+  wallet_sandbox: {
+    slug: '/wallet-sandbox',
+    title: 'Taka-Pay Wallet Sandbox — Antibody (অ্যান্টিবডি)',
+    description: 'Practice safe mobile-money PIN and OTP hygiene in the Taka-Pay sandbox.',
+    crumb: 'Wallet Sandbox'
+  },
+  scam_call: {
+    slug: '/scam-call',
+    title: 'Live Scam Call Simulation — Antibody (অ্যান্টিবডি)',
+    description: 'Experience how a simulated scammer uses urgency and fake authority.',
+    crumb: 'Scam Call'
+  },
+  tactic_xray: {
+    slug: '/tactic-xray',
+    title: 'Tactic X-Ray Autopsy — Antibody (অ্যান্টিবডি)',
+    description: 'Dissect psychological scam pathogens under scientific glass.',
+    crumb: 'Tactic X-Ray'
+  },
+  antibody_lab: {
+    slug: '/antibody-lab',
+    title: 'Antibody Synthesis Lab — Antibody (অ্যান্টিবডি)',
+    description: 'Pair cognitive defense rules against social engineering tactics.',
+    crumb: 'Antibody Lab'
+  },
+  antibody_builder: {
+    slug: '/antibody-lab',
+    title: 'Antibody Synthesis Lab — Antibody (অ্যান্টিবডি)',
+    description: 'Pair cognitive defense rules against social engineering tactics.',
+    crumb: 'Antibody Lab'
+  },
+  mutation_round: {
+    slug: '/mutation-exam',
+    title: 'Mutation Exam — Antibody (অ্যান্টিবডি)',
+    description: 'Classify real utility alerts and mutated Dhaka scams without false alarms.',
+    crumb: 'Mutation Exam'
+  },
+  dashboard: {
+    slug: '/report',
+    title: 'Cognitive Resistance Report — Antibody (অ্যান্টিবডি)',
+    description: 'Inspect your 6-tactic Bayesian susceptibility map and download your Agent ID.',
+    crumb: 'Field Report'
+  },
+  not_found: {
+    slug: '/404',
+    title: '404 Specimen Not Found — Antibody (অ্যান্টিবডি)',
+    description: 'The requested Antibody field page could not be found.',
+    crumb: '404'
+  }
+} as any;
+
+function resolveStageFromPath(pathname: string): GameStage {
+  const clean = pathname.replace(/\/+$/, '') || '/';
+  const match = (Object.entries(STAGE_META) as Array<[Exclude<GameStage, 'boot'>, any]>).find(
+    ([key, meta]) => key !== 'not_found' && meta.slug === clean
+  );
+  if (match) return match[0];
+  return clean === '/' ? 'auth' : 'not_found';
+}
 
 export default function App() {
   const [stage, setStage] = useState<GameStage>('boot');
@@ -40,7 +119,47 @@ export default function App() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType | null>(null);
 
+  // Resolve initial route if already booted or if visiting a 404 path directly
+  useEffect(() => {
+    const initialPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const resolved = resolveStageFromPath(initialPath);
+    if (resolved === 'not_found') {
+      setStage('not_found');
+      return;
+    }
+    try {
+      const hasBooted = sessionStorage.getItem('antibody_booted');
+      if (hasBooted) {
+        setStage(resolved);
+      }
+    } catch {}
+  }, []);
+
+  // Listen to browser back/forward navigation
+  useEffect(() => {
+    const onPop = () => {
+      setStage(resolveStageFromPath(window.location.pathname));
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // Update unique page title, meta description, and canonical link per route
+  useEffect(() => {
+    if (stage === 'boot') return;
+    const meta = (STAGE_META as any)[stage] || STAGE_META.not_found;
+    document.title = meta.title;
+    const descEl = document.querySelector('meta[name="description"]');
+    if (descEl) descEl.setAttribute('content', meta.description);
+    const canonEl = document.querySelector('link[rel="canonical"]');
+    if (canonEl) canonEl.setAttribute('href', `${SITE_ORIGIN}${meta.slug}`);
+  }, [stage]);
+
   const transitionTo = (nextStage: GameStage) => {
+    const meta = (STAGE_META as any)[nextStage];
+    if (meta && typeof window !== 'undefined' && window.location.pathname !== meta.slug) {
+      window.history.pushState({}, '', meta.slug);
+    }
     const reduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -55,26 +174,19 @@ export default function App() {
     }, 380);
   };
 
-  useEffect(() => {
-    try {
-      const hasBooted = sessionStorage.getItem('antibody_booted');
-      if (hasBooted) {
-        setStage('auth');
-      }
-    } catch {}
-  }, []);
-
   const handleBootComplete = () => {
     try {
       sessionStorage.setItem('antibody_booted', 'true');
     } catch {}
-    setStage('auth');
+    const resolved =
+      typeof window !== 'undefined' ? resolveStageFromPath(window.location.pathname) : 'auth';
+    setStage(resolved);
   };
 
   const handleAuthenticated = (agentProfile: AgentProfile, authToken: string) => {
     setAgent(agentProfile);
     setToken(authToken);
-    setStage('case_intro');
+    transitionTo('case_intro');
   };
 
   const handleDemoMode = () => {
@@ -87,7 +199,7 @@ export default function App() {
       lastSeenAt: new Date().toISOString()
     };
     setAgent(demoAgent);
-    setStage('case_intro');
+    transitionTo('case_intro');
   };
 
   const handleDeleteData = async () => {
@@ -101,7 +213,7 @@ export default function App() {
     setToken(null);
     setDashboardMetrics(null);
     setWalletBalance(5000);
-    setStage('auth');
+    transitionTo('auth');
   };
 
   const handleRoundComplete = async (results: { correct: number; falseAlarms: number; total: number }) => {
@@ -139,15 +251,17 @@ export default function App() {
         if (res.ok) {
           const data = (await res.json()) as DashboardMetrics;
           setDashboardMetrics(data);
-          setStage('dashboard');
+          transitionTo('dashboard');
           return;
         }
       } catch {}
     }
 
     setDashboardMetrics(fallbackMetrics);
-    setStage('dashboard');
+    transitionTo('dashboard');
   };
+
+  const currentMeta = stage !== 'boot' ? (STAGE_META as any)[stage] || STAGE_META.not_found : null;
 
   return (
     <div className="min-h-screen flex flex-col justify-between selection:bg-mustard selection:text-ink">
@@ -156,10 +270,17 @@ export default function App() {
       {stage !== 'boot' && (
         <header className="border-b-2 border-ink bg-[#FAF5EB] px-4 py-3 flex flex-wrap justify-between items-center gap-2 text-xs font-mono">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-ink text-sm sm:text-base tracking-tight flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 bg-vermilion rounded-full inline-block" />
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                transitionTo('auth');
+              }}
+              className="font-bold text-ink text-sm sm:text-base tracking-tight flex items-center gap-1.5 hover:underline"
+            >
+              <span className="w-2.5 h-2.5 bg-vermilion rounded-full inline-block" aria-hidden="true" />
               অ্যান্টিবডি // ANTIBODY
-            </span>
+            </a>
             <span className="hidden sm:inline text-faded-ink text-[11px] border-l border-ink/30 pl-2">
               Dhaka Cognitive Specimen Lab
             </span>
@@ -206,6 +327,24 @@ export default function App() {
 
       {stage !== 'boot' && (
         <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl">
+          {/* Breadcrumbs + Internal Links */}
+          {currentMeta && (
+            <nav aria-label="Breadcrumb" className="font-mono text-xs text-faded-ink mb-2 flex items-center gap-2">
+              <a
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  transitionTo('auth');
+                }}
+                className="underline hover:text-ink"
+              >
+                Home
+              </a>
+              <span aria-hidden="true">/</span>
+              <span className="text-ink font-bold">{currentMeta.crumb}</span>
+            </nav>
+          )}
+
           {isTransitioning ? (
             <NotebookLoadingScreen lang={lang} />
           ) : (
@@ -224,9 +363,9 @@ export default function App() {
                     <span className="font-mono text-xs bg-mustard px-2 py-0.5 font-bold uppercase text-ink">
                       CONFIDENTIAL DOSSIER // কেস ফাইল
                     </span>
-                    <h2 className="font-serif font-bold text-2xl text-ink mt-2 riso-misregister" data-text="Subject: 1 Alien. Money Exp: None.">
+                    <h1 className="font-serif font-bold text-2xl text-ink mt-2 riso-misregister" data-text="Subject: 1 Alien. Money Exp: None.">
                       Subject: 1 Alien. Money Exp: None.
-                    </h2>
+                    </h1>
                   </div>
 
                   <p className="font-sans text-base text-ink leading-relaxed">
@@ -306,12 +445,16 @@ export default function App() {
                   lang={lang}
                 />
               )}
+
+              {stage === 'not_found' && (
+                <NotFoundPage onGoHome={() => transitionTo('auth')} lang={lang} />
+              )}
             </div>
           )}
         </main>
       )}
 
-      {stage !== 'boot' && stage !== 'auth' && <ScamCoachPanel lang={lang} />}
+      {stage !== 'boot' && stage !== 'auth' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
 
       {stage !== 'boot' && (
         <CookieConsentBanner

@@ -80,9 +80,9 @@ export const MutationRound: React.FC<MutationRoundProps> = ({
           <span className="font-mono text-xs bg-rose text-paper px-2 py-0.5 font-bold uppercase tracking-wider">
             MUTATION ROUND // ক্ষেত্র পরীক্ষণ
           </span>
-          <h3 className="font-serif font-bold text-xl text-ink mt-1">
+          <h1 className="font-serif font-bold text-xl text-ink mt-1">
             {lang === 'bn' ? `নমুনা নং ${currentIdx + 1} / ${scenarios.length}` : `Specimen ${currentIdx + 1} of ${scenarios.length}`}
-          </h3>
+          </h1>
         </div>
         <div className="font-mono text-xs font-bold text-faded-ink">
           {activeScenario.channel.toUpperCase()}

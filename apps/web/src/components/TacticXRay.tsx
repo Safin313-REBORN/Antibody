@@ -24,9 +24,9 @@ export const TacticXRay: React.FC<TacticXRayProps> = ({
           <span className="font-mono text-xs bg-mustard text-ink px-2 py-0.5 font-bold uppercase tracking-wider">
             TACTIC X-RAY // কারসাজি বিশ্লেষণ
           </span>
-          <h3 className="font-serif font-bold text-2xl text-ink mt-1 riso-misregister" data-text="Autopsy of the Scam Call">
+          <h1 className="font-serif font-bold text-2xl text-ink mt-1 riso-misregister" data-text="Autopsy of the Scam Call">
             Autopsy of the Scam Call
-          </h3>
+          </h1>
         </div>
         <div className="rubber-stamp rubber-stamp-danger text-xs">
           PATHOGEN DETECTED
