@@ -15,6 +15,7 @@ import { NotFoundPage } from './components/NotFoundPage';
 import { SiteSearchModal } from './components/SiteSearchModal';
 import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
 import { FaqAccordion } from './components/FaqAccordion';
+import { ContactModal } from './components/ContactModal';
 import {
   AgentProfile,
   DashboardMetrics,
@@ -126,7 +127,29 @@ export default function App() {
   });
   const [searchOpen, setSearchOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Optional consent-aware Google Analytics 4 loader
+  useEffect(() => {
+    const gaId = (import.meta as any).env?.VITE_GA_MEASUREMENT_ID;
+    if (!gaId) return;
+    try {
+      if (localStorage.getItem('antibody_cookie_consent') !== 'all') return;
+      if (document.getElementById('antibody-ga4')) return;
+      const script = document.createElement('script');
+      script.id = 'antibody-ga4';
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+      document.head.appendChild(script);
+      (window as any).dataLayer = (window as any).dataLayer || [];
+      (window as any).gtag = function () {
+        (window as any).dataLayer.push(arguments);
+      };
+      (window as any).gtag('js', new Date());
+      (window as any).gtag('config', gaId, { anonymize_ip: true });
+    } catch {}
+  }, []);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Dark mode attribute sync
@@ -669,11 +692,12 @@ export default function App() {
 
       {stage !== 'boot' && stage !== 'auth' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
 
-      {/* Floating Contact & Back-to-Top Controls */}
+      {/* Floating Contact, WhatsApp & Back-to-Top Controls */}
       {stage !== 'boot' && (
         <div className="fixed bottom-4 left-4 z-30 flex items-center gap-2 no-print">
-          <a
-            href="mailto:contact@antibody-lab.org?subject=Antibody%20Inquiry"
+          <button
+            type="button"
+            onClick={() => setContactOpen(true)}
             className="min-h-[44px] px-3 py-2 bg-paper text-ink font-mono text-xs font-bold border-2 border-ink shadow-ink-blot hover:bg-mustard flex items-center gap-1.5"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
@@ -681,6 +705,19 @@ export default function App() {
               <polyline points="22,6 12,13 2,6" />
             </svg>
             <span>{lang === 'bn' ? 'যোগাযোগ' : 'Contact'}</span>
+          </button>
+
+          <a
+            href="https://wa.me/8801600000000?text=Hello%20Antibody%20Lab%2C%20I%20have%20a%20question%20about%20scam%20defense."
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat or share via WhatsApp"
+            className="min-h-[44px] px-3 py-2 bg-teal text-paper font-mono text-xs font-bold border-2 border-ink shadow-ink-blot hover:bg-teal/90 flex items-center gap-1.5"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            <span>WhatsApp</span>
           </a>
 
           {showBackToTop && (
@@ -695,6 +732,12 @@ export default function App() {
           )}
         </div>
       )}
+
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        lang={lang}
+      />
 
       {stage !== 'boot' && (
         <CookieConsentBanner

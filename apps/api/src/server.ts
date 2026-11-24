@@ -351,6 +351,29 @@ export function buildServer() {
     return { ok: true };
   });
 
+  // Contact Form submission (rate-limited, sanitized)
+  app.post('/api/v1/contact', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
+    const bodySchema = z.object({
+      name: z.string().max(60).optional(),
+      message: z.string().min(5).max(1000)
+    });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Message must be between 5 and 1000 characters.' });
+    }
+    const cleanName = sanitizeText(parsed.data.name || 'Visitor');
+    const cleanMsg = sanitizeText(parsed.data.message);
+    db.prepare('INSERT INTO audit_events (id, agent_id, type, created_at) VALUES (?, NULL, ?, ?)').run(
+      nanoid(12),
+      `contact:${cleanName.slice(0, 24)}`,
+      new Date().toISOString()
+    );
+    req.log.info({ from: cleanName, length: cleanMsg.length }, 'Contact form submitted');
+    return { success: true };
+  });
+
   // Error Tracking Telemetry (sanitized, zero-PII)
   app.post('/api/v1/telemetry/error', async (req, reply) => {
     const bodySchema = z.object({

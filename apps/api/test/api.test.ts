@@ -153,5 +153,11 @@ describe('Antibody API Integration Tests', () => {
     const cached = await request(app.server).get('/api/v1/content/antibodies');
     expect(cached.status).toBe(200);
     expect(cached.headers['cache-control']).toContain('max-age=3600');
+
+    const contactRes = await request(app.server)
+      .post('/api/v1/contact')
+      .send({ name: 'Dhaka Tester', message: 'Testing the contact form submission!' });
+    expect(contactRes.status).toBe(200);
+    expect(contactRes.body.success).toBe(true);
   });
 });
