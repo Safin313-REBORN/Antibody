@@ -70,11 +70,10 @@ export const AntibodyBuilder: React.FC<AntibodyBuilderProps> = ({
       {feedback && (
         <div
           role={feedback.type === 'error' ? 'alert' : 'status'}
-          className={`p-3 mb-4 border-l-4 font-mono text-xs font-bold ${
-            feedback.type === 'error'
-              ? 'bg-vermilion/15 border-vermilion text-vermilion'
-              : 'bg-teal/15 border-teal text-teal'
-          }`}
+          className={`p-3 mb-4 border-l-4 font-mono text-xs font-bold ${feedback.type === 'error'
+            ? 'bg-vermilion/15 border-vermilion text-vermilion'
+            : 'bg-teal/15 border-teal text-teal'
+            }`}
         >
           {feedback.text}
         </div>
@@ -93,11 +92,10 @@ export const AntibodyBuilder: React.FC<AntibodyBuilderProps> = ({
               <button
                 key={t}
                 onClick={() => setSelectedTactic(t)}
-                className={`w-full p-3 text-left border-2 border-ink flex items-center justify-between transition-all ${
-                  selectedTactic === t
-                    ? 'bg-mustard/20 border-mustard font-bold'
-                    : 'bg-[#FAF5EC]'
-                }`}
+                className={`w-full p-3 text-left border-2 border-ink flex items-center justify-between transition-all ${selectedTactic === t
+                  ? 'bg-mustard/20 border-mustard font-bold'
+                  : 'bg-[#FAF5EC]'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <SpecimenIcon tactic={t} size={28} />
@@ -151,11 +149,10 @@ export const AntibodyBuilder: React.FC<AntibodyBuilderProps> = ({
         <button
           onClick={onAntibodiesReady}
           disabled={!isComplete}
-          className={`px-6 py-3 font-mono font-bold text-sm border-2 border-ink shadow-ink-blot uppercase tracking-wider transition-all ${
-            isComplete
-              ? 'bg-teal text-paper hover:bg-teal/90'
-              : 'bg-paper text-faded-ink opacity-50 cursor-not-allowed'
-          }`}
+          className={`px-6 py-3 font-mono font-bold text-sm border-2 border-ink shadow-ink-blot uppercase tracking-wider transition-all ${isComplete
+            ? 'bg-teal text-paper hover:bg-teal/90'
+            : 'bg-paper text-faded-ink opacity-50 cursor-not-allowed'
+            }`}
         >
           {lang === 'bn' ? 'মিউটেশন রাউন্ড শুরু (Start Mutations) →' : 'Deploy to Field Exam →'}
         </button>

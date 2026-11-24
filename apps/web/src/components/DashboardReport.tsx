@@ -148,10 +148,15 @@ export const DashboardReport: React.FC<DashboardReportProps> = ({
         </div>
       </div>
 
-      {/* Alien Celebration */}
-      <div className="flex justify-center py-2">
+      {/* Alien Celebration with Figure Caption */}
+      <figure className="flex flex-col items-center py-2 space-y-1">
         <AlienCharacter mood="proud" hasAntibody={true} size={110} />
-      </div>
+        <figcaption className="font-mono text-[11px] text-faded-ink">
+          {lang === 'bn'
+            ? 'চিত্র: অ্যান্টিবডি সক্রিয় হওয়ার পর নমুনা প্রাণীর অবস্থান'
+            : 'Fig 1. Subject equipped with cognitive scam antibodies.'}
+        </figcaption>
+      </figure>
 
       {/* Bottom Actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 border-t-2 border-ink pt-4 font-mono text-xs">

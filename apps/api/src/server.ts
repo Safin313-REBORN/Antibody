@@ -113,7 +113,9 @@ export function buildServer() {
   });
 
   // Auth: Register with Callsign + 3-Word Passphrase
-  app.post('/api/v1/auth/register', async (req, reply) => {
+  app.post('/api/v1/auth/register', {
+    config: { rateLimit: { max: 15, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
     const bodySchema = z.object({
       callsign: z.string().min(3).max(30),
       passphrase: z.string().min(6),
@@ -172,7 +174,9 @@ export function buildServer() {
   });
 
   // Auth: Login with Callsign + Passphrase
-  app.post('/api/v1/auth/login', async (req, reply) => {
+  app.post('/api/v1/auth/login', {
+    config: { rateLimit: { max: 15, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
     const bodySchema = z.object({
       callsign: z.string(),
       passphrase: z.string()
@@ -227,6 +231,99 @@ export function buildServer() {
   app.post('/api/v1/auth/logout', async (_req, reply) => {
     reply.clearCookie('refreshToken', { path: '/' });
     return { success: true };
+  });
+
+  // Auth: Passphrase Reset / Rotation (requires current passphrase)
+  app.post('/api/v1/auth/reset-passphrase', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
+    const bodySchema = z.object({
+      callsign: z.string().min(3),
+      currentPassphrase: z.string().min(6),
+      newPassphrase: z.string().min(6)
+    });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Valid callsign, current passphrase, and new passphrase (6+ chars) required.' });
+    }
+    const { callsign, currentPassphrase, newPassphrase } = parsed.data;
+    const user = db.prepare('SELECT * FROM agents WHERE callsign = ?').get(callsign) as any;
+    if (!user || !user.passphrase_hash) {
+      return reply.status(401).send({ error: 'Invalid callsign or passphrase.' });
+    }
+    const match = await argon2.verify(user.passphrase_hash, currentPassphrase);
+    if (!match) {
+      return reply.status(401).send({ error: 'Current passphrase does not match.' });
+    }
+    const newHash = await argon2.hash(newPassphrase);
+    db.prepare('UPDATE agents SET passphrase_hash = ? WHERE id = ?').run(newHash, user.id);
+    return { success: true, message: 'Passphrase rotated securely.' };
+  });
+
+  // Auth: Optional Email Verification (privacy-safe token flow)
+  const pendingEmailTokens = new Map<string, { email: string; expiresAt: number }>();
+
+  app.post('/api/v1/auth/verify-email', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
+    const bodySchema = z.object({ email: z.string().email() });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Please enter a valid email address.' });
+    }
+    const code = nanoid(6).toUpperCase();
+    pendingEmailTokens.set(code, { email: parsed.data.email, expiresAt: Date.now() + 15 * 60 * 1000 });
+    return {
+      success: true,
+      message: 'Verification code generated (simulation mode: no external email sent).',
+      simulationCode: process.env.NODE_ENV !== 'production' ? code : undefined
+    };
+  });
+
+  app.post('/api/v1/auth/confirm-email', async (req, reply) => {
+    const bodySchema = z.object({ code: z.string().min(4) });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Verification code required.' });
+    }
+    const entry = pendingEmailTokens.get(parsed.data.code.toUpperCase());
+    if (!entry || entry.expiresAt < Date.now()) {
+      return reply.status(400).send({ error: 'Invalid or expired verification code.' });
+    }
+    pendingEmailTokens.delete(parsed.data.code.toUpperCase());
+    return { success: true, verified: true };
+  });
+
+  // Privacy-First Analytics (aggregate non-PII stage events)
+  app.post('/api/v1/analytics/event', async (req, reply) => {
+    const bodySchema = z.object({
+      event: z.string().min(1).max(64),
+      stage: z.string().max(64).optional()
+    });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Invalid analytics payload' });
+    }
+    db.prepare('INSERT INTO audit_events (id, agent_id, type, created_at) VALUES (?, NULL, ?, ?)').run(
+      nanoid(12),
+      `analytics:${parsed.data.event}:${parsed.data.stage || 'none'}`,
+      new Date().toISOString()
+    );
+    return { ok: true };
+  });
+
+  // Error Tracking Telemetry (sanitized, zero-PII)
+  app.post('/api/v1/telemetry/error', async (req, reply) => {
+    const bodySchema = z.object({
+      message: z.string().min(1).max(300),
+      source: z.string().max(120).optional()
+    });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Invalid telemetry payload' });
+    }
+    req.log.error({ clientError: parsed.data.message, source: parsed.data.source }, 'Client error reported');
+    return { logged: true };
   });
 
   // User: Delete My Data (hard-delete everything)

@@ -83,9 +83,20 @@ export const SiteSearchModal: React.FC<SiteSearchModalProps> = ({
         />
 
         <div className="space-y-3">
-          <div className="font-mono text-[11px] font-bold text-faded-ink uppercase">
-            Tactics &amp; Antibodies ({tacticResults.length})
-          </div>
+          {tacticResults.length === 0 && scenarioResults.length === 0 ? (
+            <div role="status" className="p-6 text-center bg-[#FAF5EC] border-2 border-dashed border-ink space-y-2">
+              <p className="font-mono text-xs font-bold text-ink">
+                {lang === 'bn' ? 'কোনো নমুনা খুঁজে পাওয়া যায়নি' : 'No matching specimens found'}
+              </p>
+              <p className="font-sans text-xs text-faded-ink">
+                {lang === 'bn' ? 'অন্য কোনো শব্দ দিয়ে চেষ্টা করুন (যেমন: OTP, Fear, DESCO)।' : 'Try searching for OTP, Urgency, Fear, or DESCO.'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="font-mono text-[11px] font-bold text-faded-ink uppercase">
+                Tactics &amp; Antibodies ({tacticResults.length})
+              </div>
           {tacticResults.slice(0, 4).map((t) => (
             <button
               key={t.id}
@@ -118,6 +129,8 @@ export const SiteSearchModal: React.FC<SiteSearchModalProps> = ({
               <div className="font-mono text-[11px] text-faded-ink">{s.channel.toUpperCase()} • {s.legitimacy.toUpperCase()}</div>
             </button>
           ))}
+            </>
+          )}
         </div>
       </div>
     </div>

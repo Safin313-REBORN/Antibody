@@ -102,4 +102,39 @@ describe('Antibody API Integration Tests', () => {
     expect(res.body.detectedTactics).toContain('urgency');
     expect(res.body.disclaimer.en).toContain('verified helpline');
   });
+
+  it('supports passphrase rotation, email verification, analytics, and error telemetry', async () => {
+    const callsign = `ResetAlien_${Date.now()}`;
+    await request(app.server)
+      .post('/api/v1/auth/register')
+      .send({ callsign, passphrase: 'river-lamp-seven', avatar: 'curious' });
+
+    const resetRes = await request(app.server)
+      .post('/api/v1/auth/reset-passphrase')
+      .send({ callsign, currentPassphrase: 'river-lamp-seven', newPassphrase: 'breeze-cloud-mango' });
+    expect(resetRes.status).toBe(200);
+    expect(resetRes.body.success).toBe(true);
+
+    const verifyRes = await request(app.server)
+      .post('/api/v1/auth/verify-email')
+      .send({ email: 'scout@antibody-lab.org' });
+    expect(verifyRes.status).toBe(200);
+    expect(verifyRes.body.simulationCode).toBeTruthy();
+
+    const confirmRes = await request(app.server)
+      .post('/api/v1/auth/confirm-email')
+      .send({ code: verifyRes.body.simulationCode });
+    expect(confirmRes.status).toBe(200);
+    expect(confirmRes.body.verified).toBe(true);
+
+    const analyticsRes = await request(app.server)
+      .post('/api/v1/analytics/event')
+      .send({ event: 'page_view', stage: 'case_intro' });
+    expect(analyticsRes.status).toBe(200);
+
+    const errRes = await request(app.server)
+      .post('/api/v1/telemetry/error')
+      .send({ message: 'Test client telemetry', source: 'vitest' });
+    expect(errRes.status).toBe(200);
+  });
 });

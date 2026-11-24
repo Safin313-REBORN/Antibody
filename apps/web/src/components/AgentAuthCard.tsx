@@ -37,6 +37,11 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
   const [ageConsent, setAgeConsent] = useState(false);
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [copiedPhrase, setCopiedPhrase] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState<'none' | 'reset' | 'email'>('none');
+  const [newPassphrase, setNewPassphrase] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -408,10 +413,126 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-mustard text-ink font-mono font-bold text-sm shadow-ink-blot hover:bg-mustard/90 transition-all border-2 border-ink mt-2"
+            className="w-full min-h-[48px] py-3 bg-mustard text-ink font-mono font-bold text-sm shadow-ink-blot hover:bg-mustard/90 transition-all border-2 border-ink mt-2"
           >
             {loading ? 'লগইন যাচাই হচ্ছে...' : 'Resume Study / পূর্বের আইডি দিয়ে শুরু'}
           </button>
+
+          <div className="flex flex-wrap justify-between gap-2 pt-2 border-t border-ink/20 font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setRecoveryMode(recoveryMode === 'reset' ? 'none' : 'reset')}
+              className="underline text-teal font-bold"
+            >
+              Rotate / Reset Passphrase
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecoveryMode(recoveryMode === 'email' ? 'none' : 'email')}
+              className="underline text-faded-ink hover:text-ink"
+            >
+              Optional Email Verification
+            </button>
+          </div>
+
+          {recoveryMode === 'reset' && (
+            <div className="p-3 bg-[#FAF5EC] border-2 border-ink space-y-2">
+              <div className="font-mono text-xs font-bold">Rotate 3-Word Passphrase</div>
+              <input
+                type="text"
+                value={newPassphrase}
+                onChange={(e) => setNewPassphrase(e.target.value)}
+                placeholder="new-three-words"
+                className="w-full p-2 bg-paper border border-ink font-mono text-xs"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                  const res = await fetch('/api/v1/auth/reset-passphrase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callsign, currentPassphrase: passphrase, newPassphrase })
+                  });
+                  const d = await res.json();
+                  if (!res.ok) setErrorMsg(d.error || 'Could not reset passphrase');
+                  else {
+                    setPassphrase(newPassphrase);
+                    setSuccessMsg('Passphrase rotated! You can now log in with your new phrase.');
+                    setRecoveryMode('none');
+                  }
+                }}
+                className="min-h-[44px] w-full bg-teal text-paper font-mono text-xs font-bold border border-ink"
+              >
+                Update Passphrase
+              </button>
+            </div>
+          )}
+
+          {recoveryMode === 'email' && (
+            <div className="p-3 bg-[#FAF5EC] border-2 border-ink space-y-2">
+              <div className="font-mono text-xs font-bold">Optional Email Verification</div>
+              <input
+                type="email"
+                value={recoveryEmail}
+                onChange={(e) => setRecoveryEmail(e.target.value)}
+                placeholder="you@domain.com"
+                className="w-full p-2 bg-paper border border-ink font-mono text-xs"
+              />
+              {!emailCodeSent ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setErrorMsg(null);
+                    const res = await fetch('/api/v1/auth/verify-email', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: recoveryEmail })
+                    });
+                    const d = await res.json();
+                    if (!res.ok) setErrorMsg(d.error || 'Invalid email');
+                    else {
+                      setEmailCodeSent(true);
+                      setSuccessMsg(`Verification code sent${d.simulationCode ? ` (Code: ${d.simulationCode})` : ''}`);
+                    }
+                  }}
+                  className="min-h-[44px] w-full bg-mustard text-ink font-mono text-xs font-bold border border-ink"
+                >
+                  Send Verification Code
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    placeholder="Enter code"
+                    className="flex-1 p-2 bg-paper border border-ink font-mono text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await fetch('/api/v1/auth/confirm-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code: verifyCode })
+                      });
+                      const d = await res.json();
+                      if (!res.ok) setErrorMsg(d.error || 'Invalid code');
+                      else {
+                        setSuccessMsg('Email verified successfully!');
+                        setRecoveryMode('none');
+                      }
+                    }}
+                    className="min-h-[44px] px-3 bg-teal text-paper font-mono text-xs font-bold border border-ink"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </form>
       )}
     </div>

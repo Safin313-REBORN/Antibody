@@ -165,9 +165,19 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Resolve initial route if already booted or if visiting a 404 path directly
+  // Resolve initial route if already booted or if visiting a 404 / legal path directly
   useEffect(() => {
-    const initialPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const initialPath = typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') || '/' : '/';
+    if (initialPath === '/privacy') {
+      setStage('auth');
+      setActiveLegalDoc('privacy');
+      return;
+    }
+    if (initialPath === '/terms') {
+      setStage('auth');
+      setActiveLegalDoc('terms');
+      return;
+    }
     const resolved = resolveStageFromPath(initialPath);
     if (resolved === 'not_found') {
       setStage('not_found');
@@ -190,7 +200,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // Update unique page title, meta description, and canonical link per route
+  // Update unique page title, meta description, canonical link & privacy-first analytics per route
   useEffect(() => {
     if (stage === 'boot') return;
     const meta = (STAGE_META as any)[stage] || STAGE_META.not_found;
@@ -199,6 +209,11 @@ export default function App() {
     if (descEl) descEl.setAttribute('content', meta.description);
     const canonEl = document.querySelector('link[rel="canonical"]');
     if (canonEl) canonEl.setAttribute('href', `${SITE_ORIGIN}${meta.slug}`);
+    fetch('/api/v1/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: 'page_view', stage })
+    }).catch(() => {});
   }, [stage]);
 
   const transitionTo = (nextStage: GameStage) => {
@@ -246,6 +261,17 @@ export default function App() {
     };
     setAgent(demoAgent);
     transitionTo('case_intro');
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    setAgent(null);
+    setToken(null);
+    setDashboardMetrics(null);
+    setWalletBalance(5000);
+    setMobileMenuOpen(false);
+    setStatusBanner(lang === 'bn' ? 'সফলভাবে লগআউট সম্পন্ন হয়েছে।' : 'Logged out safely.');
+    transitionTo('auth');
   };
 
   const handleDeleteData = async () => {
@@ -402,6 +428,13 @@ export default function App() {
                 <span className="bg-paper px-2 py-1 border border-ink text-faded-ink">
                   {agent.callsign}
                 </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="min-h-[40px] px-2.5 py-1 border border-ink hover:bg-mustard font-bold text-[11px]"
+                >
+                  {lang === 'bn' ? 'লগআউট' : 'Logout'}
+                </button>
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteOpen(true)}
