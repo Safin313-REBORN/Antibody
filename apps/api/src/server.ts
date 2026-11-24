@@ -223,6 +223,12 @@ export function buildServer() {
     };
   });
 
+  // Auth: Logout
+  app.post('/api/v1/auth/logout', async (_req, reply) => {
+    reply.clearCookie('refreshToken', { path: '/' });
+    return { success: true };
+  });
+
   // User: Delete My Data (hard-delete everything)
   app.delete('/api/v1/me', async (req, reply) => {
     const authHeader = req.headers.authorization;
@@ -336,7 +342,7 @@ export function buildServer() {
   });
 
   // Dashboard / Progress metrics
-  app.get('/api/v1/me/dashboard', async (req, reply) => {
+  const getDashboardHandler = async (req: any) => {
     let agentId = 'guest';
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -349,20 +355,33 @@ export function buildServer() {
     const agent = (db.prepare('SELECT * FROM agents WHERE id = ?').get(agentId) as any) || {
       id: agentId,
       callsign: 'Guest Agent',
-      avatar: 'variant_default',
+      avatar: 'curious',
       is_guest: 1,
       created_at: new Date().toISOString(),
       last_seen_at: new Date().toISOString()
     };
 
     const attempts = db
-      .prepare('SELECT a.*, s.scenario_id FROM attempts a LEFT JOIN attempts s ON a.id = s.id ORDER BY a.created_at DESC LIMIT 50')
-      .all() as any[];
+      .prepare(`
+        SELECT a.*
+        FROM attempts a
+        INNER JOIN sessions s ON a.session_id = s.id
+        WHERE s.agent_id = ?
+        ORDER BY a.created_at DESC
+        LIMIT 50
+      `)
+      .all(agentId) as any[];
 
     const totalAttempts = attempts.length;
     const correctCatches = attempts.filter((a) => a.correct === 1).length;
     const falseAlarms = attempts.filter((a) => a.response === 'block' && a.correct === 0).length;
     const accuracyRate = totalAttempts > 0 ? Math.round((correctCatches / totalAttempts) * 100) : 100;
+
+    let streak = 0;
+    for (const a of attempts) {
+      if (a.correct === 1) streak++;
+      else break;
+    }
 
     const susceptibility = LearnerModel.getSusceptibilityScores(agentId);
 
@@ -379,20 +398,26 @@ export function buildServer() {
       correctCatches,
       falseAlarms,
       accuracyRate,
-      streak: 4,
+      streak,
       susceptibility,
-      recentAttempts: attempts.slice(0, 5).map((a) => ({
-        scenarioId: a.scenario_id,
-        legitimacy: 'scam',
-        playerAction: a.response,
-        correct: a.correct === 1,
-        tactics: JSON.parse(a.tactic_flags || '[]'),
-        timestamp: a.created_at
-      }))
+      recentAttempts: attempts.slice(0, 5).map((a) => {
+        const matched = SCENARIO_FIXTURES.find((sc) => sc.id === a.scenario_id);
+        return {
+          scenarioId: a.scenario_id,
+          legitimacy: matched ? matched.legitimacy : 'scam',
+          playerAction: a.response,
+          correct: a.correct === 1,
+          tactics: JSON.parse(a.tactic_flags || '[]'),
+          timestamp: a.created_at
+        };
+      })
     };
 
     return dashboard;
-  });
+  };
+
+  app.get('/api/v1/me/dashboard', getDashboardHandler);
+  app.get('/api/v1/me/progress', getDashboardHandler);
 
   // Bot 1: Scammer Bot live stream / next turn
   app.get('/api/v1/bot/scammer/stream', async (req, reply) => {

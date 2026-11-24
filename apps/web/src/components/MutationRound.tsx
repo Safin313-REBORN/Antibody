@@ -4,12 +4,14 @@ import { AlienCharacter } from './AlienCharacter';
 
 interface MutationRoundProps {
   scenarios: Scenario[];
-  onRoundComplete: (results: { correct: number; falseAlarms: number }) => void;
+  token: string | null;
+  onRoundComplete: (results: { correct: number; falseAlarms: number; total: number }) => void;
   lang: 'bn' | 'en';
 }
 
 export const MutationRound: React.FC<MutationRoundProps> = ({
   scenarios,
+  token,
   onRoundComplete,
   lang
 }) => {
@@ -45,14 +47,19 @@ export const MutationRound: React.FC<MutationRoundProps> = ({
 
     const nextStats = {
       correct: stats.correct + (isCorrect ? 1 : 0),
-      falseAlarms: stats.falseAlarms + (isFalseAlarm ? 1 : 0)
+      falseAlarms: stats.falseAlarms + (isFalseAlarm ? 1 : 0),
+      total: scenarios.length
     };
-    setStats(nextStats);
+    setStats({ correct: nextStats.correct, falseAlarms: nextStats.falseAlarms });
 
-    // Call API answer recording
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token && token !== 'local-offline-token') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     fetch(`/api/v1/scenarios/${activeScenario.id}/answer`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ action, timeMs: 1200 })
     }).catch(() => {});
 
@@ -95,9 +102,9 @@ export const MutationRound: React.FC<MutationRoundProps> = ({
           </p>
         </div>
 
-        {/* Rubber Stamp Overlay on Decision */}
-        {stamp && (
-          <div className="absolute inset-0 flex items-center justify-center bg-paper/60 backdrop-blur-xs">
+        {/* Rubber Stamp Overlay on Decision (solid paper tint, no glassmorphism) */}
+        <div aria-live="polite" className={stamp ? 'absolute inset-0 flex items-center justify-center bg-[#F3EBDD]/90' : 'sr-only'}>
+          {stamp && (
             <span
               className={`rubber-stamp text-2xl font-black ${
                 stamp === 'CAUGHT'
@@ -109,26 +116,35 @@ export const MutationRound: React.FC<MutationRoundProps> = ({
             >
               {stamp}
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Action buttons (48px+ touch targets, custom SVG icons) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
+          type="button"
           onClick={() => handleAction('block')}
           disabled={stamp !== null}
-          className="py-3 bg-vermilion text-paper font-mono font-bold text-sm border-2 border-ink shadow-ink-blot hover:bg-vermilion/90 uppercase tracking-wider"
+          className="min-h-[48px] py-3 px-4 bg-vermilion text-paper font-mono font-bold text-sm border-2 border-ink shadow-ink-blot hover:bg-vermilion/90 uppercase tracking-wider flex items-center justify-center gap-2"
         >
-          {lang === 'bn' ? '🛑 ব্লক করুন (BLOCK / SCAM)' : '🛑 BLOCK (SCAM)'}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <line x1="5" y1="5" x2="19" y2="19" />
+          </svg>
+          <span>{lang === 'bn' ? 'ব্লক করুন (BLOCK / SCAM)' : 'BLOCK (SCAM)'}</span>
         </button>
 
         <button
+          type="button"
           onClick={() => handleAction('allow')}
           disabled={stamp !== null}
-          className="py-3 bg-teal text-paper font-mono font-bold text-sm border-2 border-ink shadow-ink-blot hover:bg-teal/90 uppercase tracking-wider"
+          className="min-h-[48px] py-3 px-4 bg-teal text-paper font-mono font-bold text-sm border-2 border-ink shadow-ink-blot hover:bg-teal/90 uppercase tracking-wider flex items-center justify-center gap-2"
         >
-          {lang === 'bn' ? '✅ গ্রহণ করুন (ALLOW / LEGIT)' : '✅ ALLOW (LEGIT)'}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{lang === 'bn' ? 'গ্রহণ করুন (ALLOW / LEGIT)' : 'ALLOW (LEGIT)'}</span>
         </button>
       </div>
 
