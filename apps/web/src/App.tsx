@@ -39,7 +39,7 @@ export type GameStage =
   | 'dashboard'
   | 'not_found';
 
-const SITE_ORIGIN = 'https://antibody-lab.org';
+const SITE_ORIGIN = 'https://antibody-game.vercel.app';
 
 const STAGE_META: Record<
   Exclude<GameStage, 'boot'>,
@@ -507,6 +507,16 @@ export default function App() {
               aria-label="Mobile Navigation"
               className="w-full md:hidden border-t-2 border-ink pt-3 mt-2 flex flex-col gap-2"
             >
+              <button
+                type="button"
+                onClick={() => {
+                  setEncyclopediaOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="min-h-[48px] px-3 py-2 border-2 border-ink bg-paper text-left font-bold"
+              >
+                {lang === 'bn' ? 'জীবাণু কোষ (6 Pathogens)' : '6 Scam Pathogens'}
+              </button>
               <button
                 type="button"
                 onClick={() => {
