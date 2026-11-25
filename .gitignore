@@ -6,3 +6,4 @@ dist/
 *.sqlite-shm
 data/
 .DS_Store
+.vercel/
