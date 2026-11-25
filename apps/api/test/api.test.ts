@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import { buildServer } from '../src/server.js';
+import { db } from '../src/db.js';
 
 describe('Antibody API Integration Tests', () => {
   const app = buildServer();
@@ -56,12 +57,18 @@ describe('Antibody API Integration Tests', () => {
     expect(dashRes.body.falseAlarms).toBe(1);
     expect(dashRes.body.accuracyRate).toBe(50);
 
-    // Delete my data hard-deletes agent
+    // Delete my data hard-deletes agent AND cascades to sessions, attempts, and susceptibility
+    const agentId = guestRes.body.agent.id;
     const delRes = await request(app.server)
       .delete('/api/v1/me')
       .set('Authorization', `Bearer ${token}`);
     expect(delRes.status).toBe(200);
     expect(delRes.body.success).toBe(true);
+
+    const remainingSessions = db.prepare('SELECT COUNT(*) as c FROM sessions WHERE agent_id = ?').get(agentId) as any;
+    const remainingSuscept = db.prepare('SELECT COUNT(*) as c FROM susceptibility WHERE agent_id = ?').get(agentId) as any;
+    expect(remainingSessions.c).toBe(0);
+    expect(remainingSuscept.c).toBe(0);
   });
 
   it('supports register, duplicate rejection, login, and logout', async () => {
@@ -159,5 +166,19 @@ describe('Antibody API Integration Tests', () => {
       .send({ name: 'Dhaka Tester', message: 'Testing the contact form submission!' });
     expect(contactRes.status).toBe(200);
     expect(contactRes.body.success).toBe(true);
+
+    // Unauthenticated /scenarios/:id/answer works statelessly without foreign key errors
+    const statelessAns = await request(app.server)
+      .post('/api/v1/scenarios/scen_01_taka_pay_pin_call/answer')
+      .send({ action: 'block', timeMs: 500 });
+    expect(statelessAns.status).toBe(200);
+    expect(statelessAns.body.correct).toBe(true);
+
+    // Refresh token rotation via httpOnly cookie
+    const agentWithCookie = request.agent(app.server);
+    await agentWithCookie.post('/api/v1/auth/guest');
+    const refreshRes = await agentWithCookie.post('/api/v1/auth/refresh');
+    expect(refreshRes.status).toBe(200);
+    expect(refreshRes.body.token).toBeTruthy();
   });
 });

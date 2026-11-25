@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Scenario } from '@antibody/shared';
 import { AlienCharacter } from './AlienCharacter';
 
@@ -18,6 +18,13 @@ export const MutationRound: React.FC<MutationRoundProps> = ({
   const [currentIdx, setCurrentIdx] = useState(0);
   const [stamp, setStamp] = useState<'CAUGHT' | 'FALSE ALARM' | 'MISSED' | null>(null);
   const [stats, setStats] = useState({ correct: 0, falseAlarms: 0 });
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const activeScenario = scenarios[currentIdx] || scenarios[0];
 
@@ -63,7 +70,8 @@ export const MutationRound: React.FC<MutationRoundProps> = ({
       body: JSON.stringify({ action, timeMs: 1200 })
     }).catch(() => {});
 
-    setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
       setStamp(null);
       if (currentIdx < scenarios.length - 1) {
         setCurrentIdx((prev) => prev + 1);

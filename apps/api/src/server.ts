@@ -22,7 +22,13 @@ import {
   DashboardMetrics
 } from '@antibody/shared';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'antibody-dev-secret-change-in-prod-12345';
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV === 'production'
+    ? (() => {
+        throw new Error('FATAL: JWT_SECRET environment variable must be set in production.');
+      })()
+    : 'antibody-dev-secret-change-in-prod-12345');
 const PORT = Number(process.env.PORT) || 4000;
 const ALLOWED_ORIGINS = (
   process.env.CORS_ORIGINS ||
@@ -66,8 +72,9 @@ export function buildServer() {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        scriptSrc: ["'self'"]
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://www.google-analytics.com'],
+        scriptSrc: ["'self'", 'https://www.googletagmanager.com'],
+        connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://region1.google-analytics.com']
       }
     }
   });
@@ -104,7 +111,9 @@ export function buildServer() {
   });
 
   // Auth: Guest Session
-  app.post('/api/v1/auth/guest', async (req, reply) => {
+  app.post('/api/v1/auth/guest', {
+    config: { rateLimit: { max: 20, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
     const id = nanoid(12);
     const guestCallsign = `Agent-${nanoid(5).toUpperCase()}`;
     const now = new Date().toISOString();
@@ -272,6 +281,37 @@ export function buildServer() {
     return { success: true };
   });
 
+  // Auth: Refresh Access Token
+  app.post('/api/v1/auth/refresh', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } }
+  }, async (req, reply) => {
+    const refreshCookie = (req.cookies as any)?.refreshToken;
+    if (!refreshCookie) {
+      return reply.status(401).send({ error: 'Missing refresh token' });
+    }
+    try {
+      const decoded = jwt.verify(refreshCookie, JWT_SECRET) as { agentId: string; type?: string };
+      if (decoded.type !== 'refresh') {
+        return reply.status(401).send({ error: 'Invalid refresh token' });
+      }
+      const user = db.prepare('SELECT id FROM agents WHERE id = ?').get(decoded.agentId) as any;
+      if (!user) {
+        return reply.status(401).send({ error: 'Agent no longer exists' });
+      }
+      const sessionId = nanoid(16);
+      db.prepare('INSERT INTO sessions (id, agent_id, started_at, locale) VALUES (?, ?, ?, ?)').run(
+        sessionId,
+        user.id,
+        new Date().toISOString(),
+        'bn'
+      );
+      const token = jwt.sign({ agentId: user.id, sessionId }, JWT_SECRET, { expiresIn: '15m' });
+      return { token };
+    } catch {
+      return reply.status(401).send({ error: 'Invalid or expired refresh token' });
+    }
+  });
+
   // Auth: Passphrase Reset / Rotation (requires current passphrase)
   app.post('/api/v1/auth/reset-passphrase', {
     config: { rateLimit: { max: 10, timeWindow: '1 minute' } }
@@ -310,8 +350,16 @@ export function buildServer() {
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Please enter a valid email address.' });
     }
+    const now = Date.now();
+    for (const [k, v] of pendingEmailTokens.entries()) {
+      if (v.expiresAt < now) pendingEmailTokens.delete(k);
+    }
+    if (pendingEmailTokens.size >= 500) {
+      const oldestKey = pendingEmailTokens.keys().next().value;
+      if (oldestKey) pendingEmailTokens.delete(oldestKey);
+    }
     const code = nanoid(6).toUpperCase();
-    pendingEmailTokens.set(code, { email: parsed.data.email, expiresAt: Date.now() + 15 * 60 * 1000 });
+    pendingEmailTokens.set(code, { email: parsed.data.email, expiresAt: now + 15 * 60 * 1000 });
     return {
       success: true,
       message: 'Verification code generated (simulation mode: no external email sent).',
@@ -409,18 +457,9 @@ export function buildServer() {
   });
 
   // Scenarios: Next scenario adaptive selection
-  app.post('/api/v1/scenarios/next', async (req, reply) => {
-    let agentId = 'guest';
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      try {
-        const decoded = jwt.verify(authHeader.replace('Bearer ', ''), JWT_SECRET) as any;
-        agentId = decoded.agentId;
-      } catch {}
-    }
-
-    const weakestTactic = LearnerModel.getWeakestTactic(agentId);
-    // Find scenario matching the weakest tactic or fallback
+  app.post('/api/v1/scenarios/next', async (req) => {
+    const decoded = verifyBearerToken(req.headers.authorization);
+    const weakestTactic = decoded ? LearnerModel.getWeakestTactic(decoded.agentId) : 'urgency';
     let candidate = SCENARIO_FIXTURES.find((s) => s.tactics.includes(weakestTactic));
     if (!candidate) {
       candidate = SCENARIO_FIXTURES[Math.floor(Math.random() * SCENARIO_FIXTURES.length)];
@@ -433,7 +472,7 @@ export function buildServer() {
   app.post('/api/v1/scenarios/:id/answer', async (req, reply) => {
     const bodySchema = z.object({
       action: z.enum(['block', 'allow', 'challenge']),
-      timeMs: z.number().default(1000)
+      timeMs: z.number().min(0).max(600000).default(1000)
     });
 
     const parsed = bodySchema.safeParse(req.body);
@@ -457,37 +496,43 @@ export function buildServer() {
       }
     }
 
-    let agentId = 'guest';
-    let sessionId = 'session_guest';
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-      try {
-        const decoded = jwt.verify(authHeader.replace('Bearer ', ''), JWT_SECRET) as any;
-        agentId = decoded.agentId;
-        sessionId = decoded.sessionId || 'session_default';
-      } catch {}
-    }
-
     const attemptId = nanoid(14);
-    const now = new Date().toISOString();
+    const decoded = verifyBearerToken(req.headers.authorization);
 
-    db.prepare(`
-      INSERT INTO attempts (id, session_id, scenario_id, response, correct, time_ms, tactic_flags, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      attemptId,
-      sessionId,
-      scenario.id,
-      action,
-      correct ? 1 : 0,
-      timeMs,
-      JSON.stringify(scenario.tactics),
-      now
-    );
+    // Only persist to DB when authenticated with a valid JWT (prevents orphan guest rows)
+    if (decoded) {
+      const now = new Date().toISOString();
+      let sessionId = decoded.sessionId;
+      const existingSession = sessionId
+        ? db.prepare('SELECT id FROM sessions WHERE id = ? AND agent_id = ?').get(sessionId, decoded.agentId)
+        : null;
+      if (!existingSession) {
+        sessionId = nanoid(16);
+        db.prepare('INSERT INTO sessions (id, agent_id, started_at, locale) VALUES (?, ?, ?, ?)').run(
+          sessionId,
+          decoded.agentId,
+          now,
+          'bn'
+        );
+      }
 
-    // Update Bayesian learner model
-    for (const tactic of scenario.tactics) {
-      LearnerModel.recordAttempt(agentId, tactic, !correct);
+      db.prepare(`
+        INSERT INTO attempts (id, session_id, scenario_id, response, correct, time_ms, tactic_flags, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        attemptId,
+        sessionId,
+        scenario.id,
+        action,
+        correct ? 1 : 0,
+        timeMs,
+        JSON.stringify(scenario.tactics),
+        now
+      );
+
+      for (const tactic of scenario.tactics) {
+        LearnerModel.recordAttempt(decoded.agentId, tactic, !correct);
+      }
     }
 
     return {

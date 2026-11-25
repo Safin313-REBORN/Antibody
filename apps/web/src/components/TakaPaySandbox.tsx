@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AlienCharacter } from './AlienCharacter';
 
 interface TakaPaySandboxProps {
@@ -17,6 +17,13 @@ export const TakaPaySandbox: React.FC<TakaPaySandboxProps> = ({
   const [pin, setPin] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [transferDone, setTransferDone] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +37,7 @@ export const TakaPaySandbox: React.FC<TakaPaySandboxProps> = ({
     }
     setErrorMsg(null);
     setTransferDone(true);
-    setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
       onFirstTransferComplete();
     }, 1500);
   };

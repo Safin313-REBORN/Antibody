@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BootAnimation } from './components/BootAnimation';
 import { AgentAuthCard } from './components/AgentAuthCard';
-import { TakaPaySandbox } from './components/TakaPaySandbox';
-import { ScamCallExperience } from './components/ScamCallExperience';
-import { TacticXRay } from './components/TacticXRay';
-import { AntibodyBuilder } from './components/AntibodyBuilder';
-import { MutationRound } from './components/MutationRound';
-import { DashboardReport } from './components/DashboardReport';
-import { ScamCoachPanel } from './components/ScamCoachPanel';
 import { NotebookLoadingScreen } from './components/NotebookLoadingScreen';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
-import { LegalModal, LegalDocType } from './components/LegalModal';
-import { NotFoundPage } from './components/NotFoundPage';
-import { SiteSearchModal } from './components/SiteSearchModal';
-import { ConfirmDeleteModal } from './components/ConfirmDeleteModal';
 import { FaqAccordion } from './components/FaqAccordion';
-import { ContactModal } from './components/ContactModal';
+import type { LegalDocType } from './components/LegalModal';
+
+const TakaPaySandbox = lazy(() => import('./components/TakaPaySandbox').then((m) => ({ default: m.TakaPaySandbox })));
+const ScamCallExperience = lazy(() => import('./components/ScamCallExperience').then((m) => ({ default: m.ScamCallExperience })));
+const TacticXRay = lazy(() => import('./components/TacticXRay').then((m) => ({ default: m.TacticXRay })));
+const AntibodyBuilder = lazy(() => import('./components/AntibodyBuilder').then((m) => ({ default: m.AntibodyBuilder })));
+const MutationRound = lazy(() => import('./components/MutationRound').then((m) => ({ default: m.MutationRound })));
+const DashboardReport = lazy(() => import('./components/DashboardReport').then((m) => ({ default: m.DashboardReport })));
+const ScamCoachPanel = lazy(() => import('./components/ScamCoachPanel').then((m) => ({ default: m.ScamCoachPanel })));
+const LegalModal = lazy(() => import('./components/LegalModal').then((m) => ({ default: m.LegalModal })));
+const NotFoundPage = lazy(() => import('./components/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const SiteSearchModal = lazy(() => import('./components/SiteSearchModal').then((m) => ({ default: m.SiteSearchModal })));
+const ConfirmDeleteModal = lazy(() => import('./components/ConfirmDeleteModal').then((m) => ({ default: m.ConfirmDeleteModal })));
+const ContactModal = lazy(() => import('./components/ContactModal').then((m) => ({ default: m.ContactModal })));
 import {
   AgentProfile,
   DashboardMetrics,
@@ -582,6 +584,7 @@ export default function App() {
           {isTransitioning ? (
             <NotebookLoadingScreen lang={lang} />
           ) : (
+            <Suspense fallback={<NotebookLoadingScreen lang={lang} />}>
             <div key={stage} className="page-turn-enter">
               {stage === 'auth' && (
                 <AgentAuthCard
@@ -684,13 +687,16 @@ export default function App() {
                 <NotFoundPage onGoHome={() => transitionTo('auth')} lang={lang} />
               )}
             </div>
+            </Suspense>
           )}
 
           {stage !== 'not_found' && <FaqAccordion lang={lang} />}
         </main>
       )}
 
-      {stage !== 'boot' && stage !== 'auth' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
+      <Suspense fallback={null}>
+        {stage !== 'boot' && stage !== 'auth' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
+      </Suspense>
 
       {/* Floating Contact, WhatsApp & Back-to-Top Controls */}
       {stage !== 'boot' && (
@@ -733,42 +739,44 @@ export default function App() {
         </div>
       )}
 
-      <ContactModal
-        open={contactOpen}
-        onClose={() => setContactOpen(false)}
-        lang={lang}
-      />
-
-      {stage !== 'boot' && (
-        <CookieConsentBanner
+      <Suspense fallback={null}>
+        <ContactModal
+          open={contactOpen}
+          onClose={() => setContactOpen(false)}
           lang={lang}
-          onOpenCookiePolicy={() => setActiveLegalDoc('cookie')}
         />
-      )}
 
-      <SiteSearchModal
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        lang={lang}
-        onNavigateStage={(target) => transitionTo(target)}
-      />
+        {stage !== 'boot' && (
+          <CookieConsentBanner
+            lang={lang}
+            onOpenCookiePolicy={() => setActiveLegalDoc('cookie')}
+          />
+        )}
 
-      <ConfirmDeleteModal
-        open={confirmDeleteOpen}
-        onCancel={() => setConfirmDeleteOpen(false)}
-        onConfirm={() => {
-          setConfirmDeleteOpen(false);
-          handleDeleteData();
-        }}
-        lang={lang}
-      />
+        <SiteSearchModal
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          lang={lang}
+          onNavigateStage={(target) => transitionTo(target)}
+        />
 
-      <LegalModal
-        doc={activeLegalDoc}
-        onClose={() => setActiveLegalDoc(null)}
-        lang={lang}
-        onDeleteData={agent ? () => setConfirmDeleteOpen(true) : undefined}
-      />
+        <ConfirmDeleteModal
+          open={confirmDeleteOpen}
+          onCancel={() => setConfirmDeleteOpen(false)}
+          onConfirm={() => {
+            setConfirmDeleteOpen(false);
+            handleDeleteData();
+          }}
+          lang={lang}
+        />
+
+        <LegalModal
+          doc={activeLegalDoc}
+          onClose={() => setActiveLegalDoc(null)}
+          lang={lang}
+          onDeleteData={agent ? () => setConfirmDeleteOpen(true) : undefined}
+        />
+      </Suspense>
 
       {stage !== 'boot' && (
         <footer className="border-t border-ink/20 py-4 px-4 pb-20 text-center font-mono text-[11px] text-faded-ink space-y-2">

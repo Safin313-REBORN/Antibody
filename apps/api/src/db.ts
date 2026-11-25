@@ -13,6 +13,7 @@ export const db = new Database(dbPath);
 
 // Run migrations and ensure schema
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS agents (

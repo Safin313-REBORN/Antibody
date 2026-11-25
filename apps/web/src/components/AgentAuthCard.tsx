@@ -144,31 +144,28 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
       <div className="flex border-b border-ink/30 mb-6 font-mono text-xs">
         <button
           onClick={() => setTab('guest')}
-          className={`px-4 py-2 font-bold transition-all ${
-            tab === 'guest'
-              ? 'bg-ink text-paper border-t-2 border-x-2 border-ink'
-              : 'text-faded-ink hover:text-ink'
-          }`}
+          className={`px-4 py-2 font-bold transition-all ${tab === 'guest'
+            ? 'bg-ink text-paper border-t-2 border-x-2 border-ink'
+            : 'text-faded-ink hover:text-ink'
+            }`}
         >
           1. এক ক্লিকে অতিথি (Guest)
         </button>
         <button
           onClick={() => setTab('register')}
-          className={`px-4 py-2 font-bold transition-all ${
-            tab === 'register'
-              ? 'bg-ink text-paper border-t-2 border-x-2 border-ink'
-              : 'text-faded-ink hover:text-ink'
-          }`}
+          className={`px-4 py-2 font-bold transition-all ${tab === 'register'
+            ? 'bg-ink text-paper border-t-2 border-x-2 border-ink'
+            : 'text-faded-ink hover:text-ink'
+            }`}
         >
           2. নতুন আইডি তৈরি (Create ID)
         </button>
         <button
           onClick={() => setTab('login')}
-          className={`px-4 py-2 font-bold transition-all ${
-            tab === 'login'
-              ? 'bg-ink text-paper border-t-2 border-x-2 border-ink'
-              : 'text-faded-ink hover:text-ink'
-          }`}
+          className={`px-4 py-2 font-bold transition-all ${tab === 'login'
+            ? 'bg-ink text-paper border-t-2 border-x-2 border-ink'
+            : 'text-faded-ink hover:text-ink'
+            }`}
         >
           3. সংরক্ষিত আইডি (Login)
         </button>
@@ -291,7 +288,7 @@ export const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard?.writeText(passphrase).catch(() => {});
+                  navigator.clipboard?.writeText(passphrase).catch(() => { });
                   setCopiedPhrase(true);
                   setTimeout(() => setCopiedPhrase(false), 1800);
                 }}

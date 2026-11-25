@@ -8,14 +8,15 @@
 }
 
 /* Paper noise and Halftone pattern overlay */
-html, body {
+html,
+body {
   overflow-x: hidden;
   max-width: 100%;
 }
 
 body {
   background-color: #F3EBDD;
-  background-image: 
+  background-image:
     radial-gradient(#14231F 0.75px, transparent 0.75px),
     radial-gradient(#5B6B63 0.5px, #F3EBDD 0.5px);
   background-size: 30px 30px, 15px 15px;
@@ -38,6 +39,7 @@ a:focus-visible {
 .riso-misregister {
   position: relative;
 }
+
 .riso-misregister::before {
   content: attr(data-text);
   position: absolute;
@@ -48,6 +50,7 @@ a:focus-visible {
   z-index: -1;
   pointer-events: none;
 }
+
 .riso-misregister::after {
   content: attr(data-text);
   position: absolute;
@@ -89,7 +92,7 @@ a:focus-visible {
 
 /* Notebook Page Edge */
 .notebook-edge {
-  box-shadow: 
+  box-shadow:
     -4px 0px 0px 0px #e0d5c1,
     -8px 0px 0px 0px #cfc2a9,
     4px 6px 12px rgba(20, 35, 31, 0.15);
@@ -103,8 +106,15 @@ a:focus-visible {
 
 /* GPU-composited keyframes (transform & opacity only) */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pageTurnEnter {
@@ -112,6 +122,7 @@ a:focus-visible {
     opacity: 0;
     transform: perspective(1200px) rotateY(-6deg) translateX(18px);
   }
+
   to {
     opacity: 1;
     transform: perspective(1200px) rotateY(0deg) translateX(0);
@@ -123,6 +134,7 @@ a:focus-visible {
     opacity: 0;
     transform: translateY(48px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -134,10 +146,12 @@ a:focus-visible {
     opacity: 0;
     transform: scale(1.35) rotate(-8deg);
   }
+
   70% {
     opacity: 1;
     transform: scale(0.96) rotate(-2.5deg);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) rotate(-3.5deg);
@@ -145,10 +159,25 @@ a:focus-visible {
 }
 
 @keyframes antennaeLook {
-  0% { transform: translateY(18px) rotate(0deg); opacity: 0; }
-  35% { transform: translateY(0) rotate(-6deg); opacity: 1; }
-  70% { transform: translateY(0) rotate(6deg); opacity: 1; }
-  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  0% {
+    transform: translateY(18px) rotate(0deg);
+    opacity: 0;
+  }
+
+  35% {
+    transform: translateY(0) rotate(-6deg);
+    opacity: 1;
+  }
+
+  70% {
+    transform: translateY(0) rotate(6deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
 }
 
 @keyframes inkBlotExpand {
@@ -156,6 +185,7 @@ a:focus-visible {
     opacity: 0;
     transform: scale(0.1);
   }
+
   to {
     opacity: 1;
     transform: scale(1.6);
@@ -163,16 +193,37 @@ a:focus-visible {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-6px);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  60% {
+    transform: translateX(-4px);
+  }
+
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 @keyframes specimenSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-fadeIn {
@@ -209,7 +260,10 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -220,6 +274,7 @@ a:focus-visible {
 button:not(:disabled) {
   transition: transform 150ms var(--ease-enter), background-color 150ms ease, box-shadow 150ms ease;
 }
+
 button:not(:disabled):hover {
   transform: translateY(-1px);
 }
@@ -232,37 +287,52 @@ button:not(:disabled):hover {
     radial-gradient(#243B35 0.5px, #14231F 0.5px);
   color: #F3EBDD;
 }
+
 [data-theme='night'] .bg-paper {
   background-color: #1B2E29 !important;
   color: #F3EBDD !important;
 }
+
 [data-theme='night'] .bg-\[\#FAF5EC\],
 [data-theme='night'] .bg-\[\#FAF5EB\],
 [data-theme='night'] .bg-\[\#FAF6EE\] {
   background-color: #213731 !important;
   color: #F3EBDD !important;
 }
+
 [data-theme='night'] .text-ink {
   color: #F3EBDD !important;
 }
+
 [data-theme='night'] .text-faded-ink {
   color: #B7C7BF !important;
 }
+
 [data-theme='night'] .border-ink {
   border-color: #8CA197 !important;
 }
 
 /* Print Stylesheet */
 @media print {
-  header, footer, nav, button, [role='dialog'], .no-print {
+
+  header,
+  footer,
+  nav,
+  button,
+  [role='dialog'],
+  .no-print {
     display: none !important;
   }
+
   body {
     background: #ffffff !important;
     color: #000000 !important;
     font-size: 12pt !important;
   }
-  .hand-border, .shadow-ink-lg, .shadow-ink-blot {
+
+  .hand-border,
+  .shadow-ink-lg,
+  .shadow-ink-blot {
     box-shadow: none !important;
     border: 1px solid #000000 !important;
   }
