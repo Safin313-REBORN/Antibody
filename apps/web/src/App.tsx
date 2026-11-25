@@ -18,6 +18,8 @@ const NotFoundPage = lazy(() => import('./components/NotFoundPage').then((m) => 
 const SiteSearchModal = lazy(() => import('./components/SiteSearchModal').then((m) => ({ default: m.SiteSearchModal })));
 const ConfirmDeleteModal = lazy(() => import('./components/ConfirmDeleteModal').then((m) => ({ default: m.ConfirmDeleteModal })));
 const ContactModal = lazy(() => import('./components/ContactModal').then((m) => ({ default: m.ContactModal })));
+const FieldManualIntro = lazy(() => import('./components/FieldManualIntro').then((m) => ({ default: m.FieldManualIntro })));
+const PathogenEncyclopedia = lazy(() => import('./components/PathogenEncyclopedia').then((m) => ({ default: m.PathogenEncyclopedia })));
 import {
   AgentProfile,
   DashboardMetrics,
@@ -130,6 +132,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   // Optional consent-aware Google Analytics 4 loader
@@ -414,6 +417,14 @@ export default function App() {
           <div className="hidden md:flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setEncyclopediaOpen(true)}
+              className="min-h-[40px] px-3 py-1 border border-ink hover:bg-mustard font-bold transition-all text-xs"
+            >
+              {lang === 'bn' ? 'জীবাণু কোষ' : 'Pathogens'}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setSearchOpen(true)}
               className="min-h-[40px] px-3 py-1 border border-ink hover:bg-mustard font-bold transition-all text-xs"
             >
@@ -587,11 +598,18 @@ export default function App() {
             <Suspense fallback={<NotebookLoadingScreen lang={lang} />}>
             <div key={stage} className="page-turn-enter">
               {stage === 'auth' && (
-                <AgentAuthCard
-                  onAuthenticated={handleAuthenticated}
-                  onContinueOffline={() => transitionTo('case_intro')}
-                  onOpenLegal={(doc) => setActiveLegalDoc(doc)}
-                />
+                <>
+                  <FieldManualIntro
+                    lang={lang}
+                    onStartDemo={handleDemoMode}
+                    onOpenEncyclopedia={() => setEncyclopediaOpen(true)}
+                  />
+                  <AgentAuthCard
+                    onAuthenticated={handleAuthenticated}
+                    onContinueOffline={() => transitionTo('case_intro')}
+                    onOpenLegal={(doc) => setActiveLegalDoc(doc)}
+                  />
+                </>
               )}
 
               {stage === 'case_intro' && (
@@ -695,7 +713,7 @@ export default function App() {
       )}
 
       <Suspense fallback={null}>
-        {stage !== 'boot' && stage !== 'auth' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
+        {stage !== 'boot' && stage !== 'not_found' && <ScamCoachPanel lang={lang} />}
       </Suspense>
 
       {/* Floating Contact, WhatsApp & Back-to-Top Controls */}
@@ -714,7 +732,7 @@ export default function App() {
           </button>
 
           <a
-            href="https://wa.me/8801600000000?text=Hello%20Antibody%20Lab%2C%20I%20have%20a%20question%20about%20scam%20defense."
+            href="https://wa.me/8801763609992?text=Hello%20Antibody%20Lab%2C%20I%20have%20a%20question%20about%20scam%20defense."
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Chat or share via WhatsApp"
@@ -740,6 +758,12 @@ export default function App() {
       )}
 
       <Suspense fallback={null}>
+        <PathogenEncyclopedia
+          open={encyclopediaOpen}
+          onClose={() => setEncyclopediaOpen(false)}
+          lang={lang}
+        />
+
         <ContactModal
           open={contactOpen}
           onClose={() => setContactOpen(false)}
@@ -784,12 +808,12 @@ export default function App() {
             &copy; {new Date().getFullYear()} Antibody Cognitive Defense Lab (অ্যান্টিবডি) // Last updated: 2026-11-25
           </div>
           <div className="flex flex-wrap justify-center items-center gap-3">
-            <a href="mailto:contact@antibody-lab.org" className="underline hover:text-ink">
-              contact@antibody-lab.org
+            <a href="mailto:251-15-858@diu.edu.bd" className="underline hover:text-ink">
+              251-15-858@diu.edu.bd
             </a>
             <span aria-hidden="true">|</span>
-            <a href="tel:+8801600000000" className="underline hover:text-ink">
-              +880 1600-000000
+            <a href="tel:+8801763609992" className="underline hover:text-ink">
+              +8801763609992
             </a>
           </div>
           <nav aria-label="Legal and compliance links" className="flex flex-wrap justify-center items-center gap-3">

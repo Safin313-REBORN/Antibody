@@ -135,12 +135,12 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             <>
               <p>
                 <strong>Business / Operator Details:</strong> Antibody Cognitive Defense Lab (Educational Open-Source Initiative), Dhaka, Bangladesh. Email:{' '}
-                <a href="mailto:contact@antibody-lab.org" className="underline text-teal font-bold">
-                  contact@antibody-lab.org
+                <a href="mailto:251-15-858@diu.edu.bd" className="underline text-teal font-bold">
+                  251-15-858@diu.edu.bd
                 </a>{' '}
-                | Helpline:{' '}
-                <a href="tel:+8801600000000" className="underline text-teal font-bold">
-                  +880 1600-000000
+                | Phone / WhatsApp:{' '}
+                <a href="tel:+8801763609992" className="underline text-teal font-bold">
+                  +8801763609992
                 </a>.
               </p>
               <p>
